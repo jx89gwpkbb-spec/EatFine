@@ -16,3 +16,9 @@
 local.properties
 .env
 debug.keystore
+
+# Web app
+node_modules
+dist
+.netlify/*
+!.netlify/results.md
