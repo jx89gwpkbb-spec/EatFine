@@ -1,0 +1,531 @@
+package com.example.data.repository
+
+import com.example.R
+import com.example.data.model.MenuItemEntity
+import com.example.data.model.RestaurantEntity
+import com.example.data.model.ReviewEntity
+
+object SeedData {
+    val sampleRestaurants = listOf(
+        RestaurantEntity(
+            id = "rest_verde",
+            name = "Verde & Grain Botanic Bistro",
+            tagline = "100% Plant-Powered, Organic & Celiac Safe",
+            cuisines = "Vegan, Healthy Bowls, Gluten-Free",
+            rating = 4.9f,
+            reviewCount = 524,
+            deliveryTimeMin = 22,
+            deliveryFee = 1.99,
+            minOrder = 12.0,
+            priceTier = 2,
+            distanceKm = 1.8,
+            address = "742 Evergreen Way, Green District",
+            isPureVeg = true,
+            dietaryRestrictionsCsv = "VEGETARIAN,VEGAN,GLUTEN_FREE,ORGANIC,DAIRY_FREE",
+            isPromoted = true,
+            isOpen = true,
+            offerText = "20% OFF on all Plant Bowls",
+            bannerDrawableRes = R.drawable.eatfine_dietary_promo_1790732440568,
+            heroCategory = "Healthy",
+            certificationNote = "Certified 100% Vegan & Dedicated Celiac Gluten-Free Prep Station."
+        ),
+        RestaurantEntity(
+            id = "rest_saffron",
+            name = "Saffron Royal Tandoori & Biryani",
+            tagline = "Authentic Heritage Dum Biryani & Kebabs",
+            cuisines = "Indian, Mughlai, Biryani, Halal",
+            rating = 4.8f,
+            reviewCount = 890,
+            deliveryTimeMin = 28,
+            deliveryFee = 2.49,
+            minOrder = 15.0,
+            priceTier = 2,
+            distanceKm = 2.4,
+            address = "120 Royal Heritage Avenue",
+            isPureVeg = false,
+            dietaryRestrictionsCsv = "HALAL,VEGETARIAN,NUT_FREE",
+            isPromoted = true,
+            isOpen = true,
+            offerText = "Free Garlic Naan with Orders $25+",
+            bannerDrawableRes = R.drawable.eatfine_hero_banner_1790732425934,
+            heroCategory = "Biryani",
+            certificationNote = "100% Certified Halal Meat and separate Vegetarian preparation tandoor."
+        ),
+        RestaurantEntity(
+            id = "rest_shanti",
+            name = "Shanti Satvik Bhojanalaya",
+            tagline = "Pure Jain & Ayurvedic Wholesome Dining",
+            cuisines = "Pure Veg, Jain, North Indian, Thali",
+            rating = 4.9f,
+            reviewCount = 380,
+            deliveryTimeMin = 20,
+            deliveryFee = 0.0,
+            minOrder = 10.0,
+            priceTier = 1,
+            distanceKm = 1.2,
+            address = "45 Temple Crescent, Heritage Nagar",
+            isPureVeg = true,
+            dietaryRestrictionsCsv = "VEGETARIAN,JAIN,ORGANIC,NUT_FREE",
+            isPromoted = false,
+            isOpen = true,
+            offerText = "Free Delivery on Satvik Thali",
+            bannerDrawableRes = R.drawable.eatfine_dietary_promo_1790732440568,
+            heroCategory = "Thali",
+            certificationNote = "100% Jain Pure: Zero onion, zero garlic, zero root vegetables."
+        ),
+        RestaurantEntity(
+            id = "rest_crust",
+            name = "Crust & Copper Artisan Pizzeria",
+            tagline = "Stone-Baked Sourdough & Celiac Crusts",
+            cuisines = "Italian, Pizza, Pasta, Gluten-Free",
+            rating = 4.7f,
+            reviewCount = 640,
+            deliveryTimeMin = 30,
+            deliveryFee = 2.99,
+            minOrder = 14.0,
+            priceTier = 2,
+            distanceKm = 3.1,
+            address = "88 Little Italy Boulevard",
+            isPureVeg = false,
+            dietaryRestrictionsCsv = "GLUTEN_FREE,VEGETARIAN,DAIRY_FREE",
+            isPromoted = false,
+            isOpen = true,
+            offerText = "Buy 1 Artisan Pizza, Get 2nd 50% Off",
+            bannerDrawableRes = R.drawable.eatfine_hero_banner_1790732425934,
+            heroCategory = "Pizza",
+            certificationNote = "Separate dedicated oven for Gluten-Free cauliflower and almond crusts."
+        ),
+        RestaurantEntity(
+            id = "rest_zenith",
+            name = "Zenith Clean Protein & Keto Lab",
+            tagline = "Macros-Tracked, Zero Sugar & Low-Carb",
+            cuisines = "Keto, Healthy, Salad, Bowls",
+            rating = 4.8f,
+            reviewCount = 412,
+            deliveryTimeMin = 18,
+            deliveryFee = 1.49,
+            minOrder = 12.0,
+            priceTier = 3,
+            distanceKm = 1.5,
+            address = "500 Innovation Park, Tech Hub",
+            isPureVeg = false,
+            dietaryRestrictionsCsv = "KETO,GLUTEN_FREE,DAIRY_FREE,HALAL",
+            isPromoted = true,
+            isOpen = true,
+            offerText = "15% OFF for EatFine Plus Members",
+            bannerDrawableRes = R.drawable.eatfine_dietary_promo_1790732440568,
+            heroCategory = "Healthy",
+            certificationNote = "Under 8g net carbs per entree, keto-certified cooking oils."
+        ),
+        RestaurantEntity(
+            id = "rest_aura",
+            name = "Aura Mediterranean Mezze & Grill",
+            tagline = "Sun-Kissed Olives, Kebabs & Fresh Dips",
+            cuisines = "Mediterranean, Greek, Halal, Vegan",
+            rating = 4.7f,
+            reviewCount = 530,
+            deliveryTimeMin = 25,
+            deliveryFee = 1.99,
+            minOrder = 15.0,
+            priceTier = 2,
+            distanceKm = 2.9,
+            address = "21 Harbor Promenade",
+            isPureVeg = false,
+            dietaryRestrictionsCsv = "HALAL,VEGAN,VEGETARIAN,GLUTEN_FREE,ORGANIC",
+            isPromoted = false,
+            isOpen = true,
+            offerText = "Free Hummus & Pita with orders over $30",
+            bannerDrawableRes = R.drawable.eatfine_hero_banner_1790732425934,
+            heroCategory = "Mediterranean",
+            certificationNote = "Halal Certified meats & wide array of Mediterranean vegan mezze."
+        ),
+        RestaurantEntity(
+            id = "rest_wholesome",
+            name = "Wholesome Hearth Gluten-Free Bakery",
+            tagline = "100% Celiac Safe Artisan Bakes & Treats",
+            cuisines = "Bakery, Desserts, Coffee, Gluten-Free",
+            rating = 4.9f,
+            reviewCount = 310,
+            deliveryTimeMin = 15,
+            deliveryFee = 1.99,
+            minOrder = 8.0,
+            priceTier = 2,
+            distanceKm = 1.1,
+            address = "14 Baker’s Mews, Old Town",
+            isPureVeg = true,
+            dietaryRestrictionsCsv = "GLUTEN_FREE,VEGETARIAN,DAIRY_FREE,NUT_FREE",
+            isPromoted = false,
+            isOpen = true,
+            offerText = "Free Matcha Cookie with Coffee",
+            bannerDrawableRes = R.drawable.eatfine_dietary_promo_1790732440568,
+            heroCategory = "Bakery",
+            certificationNote = "Zero gluten facility. Dedicated nut-free clean room."
+        )
+    )
+
+    val sampleMenuItems = listOf(
+        // Verde & Grain
+        MenuItemEntity(
+            id = "m_verde_1",
+            restaurantId = "rest_verde",
+            name = "Avocado Goddess Glow Bowl",
+            description = "Tricolor quinoa, Hass avocado, crisp cucumbers, pickled radishes, hemp hearts, turmeric tahini dressing.",
+            price = 13.99,
+            category = "Bowls",
+            isVeg = true,
+            dietaryRestrictionsCsv = "VEGAN,VEGETARIAN,GLUTEN_FREE,ORGANIC",
+            calories = 420,
+            spiceLevel = 0,
+            isBestseller = true,
+            rating = 4.9f
+        ),
+        MenuItemEntity(
+            id = "m_verde_2",
+            restaurantId = "rest_verde",
+            name = "Wild Truffle & Mushroom Risotto",
+            description = "Arborio rice cooked in slow herb broth with chanterelles, porcini, vegan cashew cream and thyme oil.",
+            price = 16.50,
+            category = "Mains",
+            isVeg = true,
+            dietaryRestrictionsCsv = "VEGAN,VEGETARIAN,GLUTEN_FREE,DAIRY_FREE",
+            calories = 510,
+            spiceLevel = 0,
+            isBestseller = true,
+            rating = 4.8f
+        ),
+        MenuItemEntity(
+            id = "m_verde_3",
+            restaurantId = "rest_verde",
+            name = "Green Vitality Cold-Pressed Elixir",
+            description = "Organic kale, green apple, cucumber, ginger, celery, mint, freshly cold-pressed.",
+            price = 6.99,
+            category = "Beverages",
+            isVeg = true,
+            dietaryRestrictionsCsv = "VEGAN,VEGETARIAN,GLUTEN_FREE,ORGANIC",
+            calories = 110,
+            spiceLevel = 0,
+            isBestseller = false,
+            rating = 4.7f
+        ),
+
+        // Saffron Royal
+        MenuItemEntity(
+            id = "m_saff_1",
+            restaurantId = "rest_saffron",
+            name = "Royal Dum Chicken Biryani (Halal)",
+            description = "Certified Halal tender chicken marinated in saffron, caramelized onions, layered with aged basmati rice.",
+            price = 16.99,
+            category = "Biryani",
+            isVeg = false,
+            dietaryRestrictionsCsv = "HALAL,NUT_FREE",
+            calories = 680,
+            spiceLevel = 2,
+            isBestseller = true,
+            rating = 4.9f
+        ),
+        MenuItemEntity(
+            id = "m_saff_2",
+            restaurantId = "rest_saffron",
+            name = "Paneer Tikka Angara",
+            description = "Smoked cottage cheese cubes marinated in Kashmiri chili, hung curd, roasted gram flour and carom seeds.",
+            price = 14.50,
+            category = "Starters",
+            isVeg = true,
+            dietaryRestrictionsCsv = "VEGETARIAN,HALAL,GLUTEN_FREE",
+            calories = 490,
+            spiceLevel = 2,
+            isBestseller = false,
+            rating = 4.8f
+        ),
+        MenuItemEntity(
+            id = "m_saff_3",
+            restaurantId = "rest_saffron",
+            name = "Dal Bukhara Slow-Simmered",
+            description = "Black lentils simmered overnight over slow charcoal embers with organic butter and sun-ripened tomatoes.",
+            price = 13.00,
+            category = "Mains",
+            isVeg = true,
+            dietaryRestrictionsCsv = "VEGETARIAN,GLUTEN_FREE,HALAL",
+            calories = 390,
+            spiceLevel = 1,
+            isBestseller = true,
+            rating = 4.9f
+        ),
+
+        // Shanti Satvik (Jain)
+        MenuItemEntity(
+            id = "m_jain_1",
+            restaurantId = "rest_shanti",
+            name = "Shanti Royal Satvik Thali (Jain)",
+            description = "Pure Jain feast: Raw banana sabzi, yellow moong dal tadka, fresh phulkas, jeera rice, buttermilk, shrikhand. No onion/garlic/root.",
+            price = 14.99,
+            category = "Thali",
+            isVeg = true,
+            dietaryRestrictionsCsv = "VEGETARIAN,JAIN,ORGANIC,NUT_FREE",
+            calories = 590,
+            spiceLevel = 1,
+            isBestseller = true,
+            rating = 5.0f
+        ),
+        MenuItemEntity(
+            id = "m_jain_2",
+            restaurantId = "rest_shanti",
+            name = "Jain Paneer Butter Masala",
+            description = "Fresh cottage cheese in creamy tomato-cashew gravy made without onion or garlic, finished with kasuri methi.",
+            price = 13.50,
+            category = "Mains",
+            isVeg = true,
+            dietaryRestrictionsCsv = "VEGETARIAN,JAIN,GLUTEN_FREE",
+            calories = 480,
+            spiceLevel = 1,
+            isBestseller = false,
+            rating = 4.8f
+        ),
+
+        // Crust & Copper
+        MenuItemEntity(
+            id = "m_crust_1",
+            restaurantId = "rest_crust",
+            name = "Gluten-Free Margherita Botanica",
+            description = "Crispy cauliflower-almond crust, San Marzano tomato coulis, vegan cashew mozzarella, fresh sweet basil.",
+            price = 17.50,
+            category = "Pizza",
+            isVeg = true,
+            dietaryRestrictionsCsv = "GLUTEN_FREE,VEGAN,VEGETARIAN,DAIRY_FREE",
+            calories = 490,
+            spiceLevel = 0,
+            isBestseller = true,
+            rating = 4.8f
+        ),
+        MenuItemEntity(
+            id = "m_crust_2",
+            restaurantId = "rest_crust",
+            name = "Diavola Truffle Rustica",
+            description = "Spicy artisanal soppressata, smoked fior di latte, hot honey drizzle, organic oregano.",
+            price = 18.99,
+            category = "Pizza",
+            isVeg = false,
+            dietaryRestrictionsCsv = "NUT_FREE",
+            calories = 720,
+            spiceLevel = 2,
+            isBestseller = true,
+            rating = 4.7f
+        ),
+
+        // Zenith Keto Lab
+        MenuItemEntity(
+            id = "m_zen_1",
+            restaurantId = "rest_zenith",
+            name = "Keto Herb-Seared Salmon & Asparagus",
+            description = "Wild Atlantic salmon fillet seared in grass-fed ghee, charred lemon asparagus, garlic-dill cauliflower puree (4g net carbs).",
+            price = 19.99,
+            category = "Mains",
+            isVeg = false,
+            dietaryRestrictionsCsv = "KETO,GLUTEN_FREE,DAIRY_FREE,HALAL",
+            calories = 540,
+            spiceLevel = 0,
+            isBestseller = true,
+            rating = 4.9f
+        ),
+        MenuItemEntity(
+            id = "m_zen_2",
+            restaurantId = "rest_zenith",
+            name = "Avocado Bacon Keto Crunch Salad",
+            description = "Baby spinach, crispy bacon strips, ripe avocado, soft boiled farm egg, walnut oil vinaigrette (3g net carbs).",
+            price = 14.50,
+            category = "Bowls",
+            isVeg = false,
+            dietaryRestrictionsCsv = "KETO,GLUTEN_FREE,DAIRY_FREE",
+            calories = 460,
+            spiceLevel = 0,
+            isBestseller = false,
+            rating = 4.8f
+        ),
+
+        // Wholesome Hearth Bakery
+        MenuItemEntity(
+            id = "m_bake_1",
+            restaurantId = "rest_wholesome",
+            name = "Gluten-Free Cinnamon Swirl Brioche",
+            description = "Soft, fluffy celiac-certified cinnamon brioche roll iced with Madagascar vanilla glaze.",
+            price = 5.50,
+            category = "Desserts",
+            isVeg = true,
+            dietaryRestrictionsCsv = "GLUTEN_FREE,VEGETARIAN,NUT_FREE",
+            calories = 290,
+            spiceLevel = 0,
+            isBestseller = true,
+            rating = 4.9f
+        ),
+        MenuItemEntity(
+            id = "m_bake_2",
+            restaurantId = "rest_wholesome",
+            name = "Vegan Dark Chocolate Hazelnut Tart",
+            description = "72% dark Valrhona ganache in an almond crust, topped with sea salt flakes.",
+            price = 6.99,
+            category = "Desserts",
+            isVeg = true,
+            dietaryRestrictionsCsv = "VEGAN,VEGETARIAN,GLUTEN_FREE,DAIRY_FREE",
+            calories = 340,
+            spiceLevel = 0,
+            isBestseller = true,
+            rating = 5.0f
+        )
+    )
+
+    val sampleReviews = listOf(
+        ReviewEntity(
+            id = "rev_1",
+            restaurantId = "rest_verde",
+            userName = "Samantha W.",
+            rating = 5.0f,
+            comment = "As someone with severe celiac, finding delicious gluten-free vegan food without worrying about cross-contamination is incredible. The Avocado Goddess Bowl was heavenly!",
+            dietaryTagsUsed = "Gluten-Free, Vegan",
+            date = "Yesterday"
+        ),
+        ReviewEntity(
+            id = "rev_2",
+            restaurantId = "rest_shanti",
+            userName = "Aarav Mehta",
+            rating = 5.0f,
+            comment = "Authentic Jain food prepared with such devotion! Completely onion and garlic free, and the taste is royal. EatFine makes ordering Jain food so easy!",
+            dietaryTagsUsed = "Jain, Pure Veg",
+            date = "2 days ago"
+        ),
+        ReviewEntity(
+            id = "rev_3",
+            restaurantId = "rest_saffron",
+            userName = "Tariq K.",
+            rating = 5.0f,
+            comment = "Verified Halal certification and mouthwatering aromatic dum biryani! Delivery was under 25 minutes, still piping hot.",
+            dietaryTagsUsed = "Halal",
+            date = "3 days ago"
+        ),
+        ReviewEntity(
+            id = "rev_4",
+            restaurantId = "rest_verde",
+            userName = "Marcus Brody",
+            rating = 4.5f,
+            comment = "The Truffle Mushroom Risotto was rich and creamy without using any dairy. Incredible culinary technique!",
+            dietaryTagsUsed = "Vegan, Dairy-Free",
+            date = "4 days ago"
+        ),
+        ReviewEntity(
+            id = "rev_5",
+            restaurantId = "rest_bliss",
+            userName = "Elena Rostova",
+            rating = 5.0f,
+            comment = "Celiac heaven! Never felt safer ordering takeout. Crispy fish tacos with zero gluten contamination.",
+            dietaryTagsUsed = "Gluten-Free, Dairy-Free",
+            date = "5 days ago"
+        ),
+        ReviewEntity(
+            id = "rev_6",
+            restaurantId = "rest_keto",
+            userName = "David Cho",
+            rating = 4.8f,
+            comment = "Macros were accurate, no sneaky carbs or hidden sugar. Grass-fed smash burger was super juicy.",
+            dietaryTagsUsed = "Keto, Gluten-Free",
+            date = "1 week ago"
+        ),
+        ReviewEntity(
+            id = "rev_7",
+            restaurantId = "rest_tokyo",
+            userName = "Hina Patel",
+            rating = 4.7f,
+            comment = "Loved that they have a dedicated vegetarian ramen broth and tamari soy sauce. Delicious umami flavor!",
+            dietaryTagsUsed = "Vegetarian, Halal",
+            date = "1 week ago"
+        )
+    )
+
+    val sampleOngoingOrder = com.example.data.model.OrderEntity(
+        orderId = "EF-849201",
+        restaurantId = "rest_verde",
+        restaurantName = "Verde & Grain Botanic Bistro",
+        totalAmount = 24.98,
+        subtotal = 20.98,
+        deliveryFee = 1.99,
+        taxAndFees = 2.01,
+        discount = 0.0,
+        status = com.example.data.model.OrderStatus.ON_THE_WAY,
+        deliveryAddress = "742 Evergreen Terrace, Apt 4B",
+        deliveryType = com.example.data.model.DeliveryType.DELIVERY,
+        placedTimestamp = System.currentTimeMillis() - (14 * 60 * 1000L), // 14 mins ago
+        estimatedDeliveryMinutes = 22,
+        driverName = "Alex Rivera",
+        driverPhone = "+1 (555) 438-9201",
+        driverVehicle = "Honda Eco Scooter • #EF-789",
+        itemsSummary = "1x Avocado Goddess Glow Bowl, 1x Green Vitality Cold-Pressed Elixir",
+        chefDietaryInstructions = "Severe peanut allergy, gluten-free utensils only",
+        paymentMethod = "EatFine Pay (Card)"
+    )
+
+    val samplePastOrders = listOf(
+        com.example.data.model.OrderEntity(
+            orderId = "EF-731940",
+            restaurantId = "rest_saffron",
+            restaurantName = "Saffron & Spice Halal Kitchen",
+            totalAmount = 31.48,
+            subtotal = 28.49,
+            deliveryFee = 0.0,
+            taxAndFees = 2.99,
+            discount = 0.0,
+            status = com.example.data.model.OrderStatus.DELIVERED,
+            deliveryAddress = "742 Evergreen Terrace, Apt 4B",
+            deliveryType = com.example.data.model.DeliveryType.DELIVERY,
+            placedTimestamp = System.currentTimeMillis() - (2 * 24 * 60 * 60 * 1000L), // 2 days ago
+            estimatedDeliveryMinutes = 30,
+            driverName = "Marcus Vance",
+            driverPhone = "+1 (555) 234-8711",
+            driverVehicle = "Yamaha NMax • #EF-452",
+            itemsSummary = "1x Royal Lucknowi Dum Biryani, 1x Butter Naan & Dal Makhani Combo",
+            chefDietaryInstructions = "100% Halal certified, medium spice",
+            paymentMethod = "Apple Pay"
+        ),
+        com.example.data.model.OrderEntity(
+            orderId = "EF-612489",
+            restaurantId = "rest_verde",
+            restaurantName = "Verde & Grain Botanic Bistro",
+            totalAmount = 16.48,
+            subtotal = 13.99,
+            deliveryFee = 1.99,
+            taxAndFees = 1.50,
+            discount = 1.0,
+            status = com.example.data.model.OrderStatus.DELIVERED,
+            deliveryAddress = "742 Evergreen Terrace, Apt 4B",
+            deliveryType = com.example.data.model.DeliveryType.DELIVERY,
+            placedTimestamp = System.currentTimeMillis() - (5 * 24 * 60 * 60 * 1000L), // 5 days ago
+            estimatedDeliveryMinutes = 20,
+            driverName = "Samantha Wu",
+            driverPhone = "+1 (555) 789-2041",
+            driverVehicle = "Vespa Elettrica • #EF-112",
+            itemsSummary = "1x Avocado Goddess Glow Bowl",
+            chefDietaryInstructions = "Extra dressing on the side, vegan only",
+            paymentMethod = "EatFine Pay (Card)"
+        ),
+        com.example.data.model.OrderEntity(
+            orderId = "EF-509122",
+            restaurantId = "rest_bliss",
+            restaurantName = "Bliss 100% Gluten-Free Cantina",
+            totalAmount = 29.80,
+            subtotal = 26.00,
+            deliveryFee = 1.99,
+            taxAndFees = 1.81,
+            discount = 0.0,
+            status = com.example.data.model.OrderStatus.DELIVERED,
+            deliveryAddress = "742 Evergreen Terrace, Apt 4B",
+            deliveryType = com.example.data.model.DeliveryType.DELIVERY,
+            placedTimestamp = System.currentTimeMillis() - (9 * 24 * 60 * 60 * 1000L), // 9 days ago
+            estimatedDeliveryMinutes = 25,
+            driverName = "Liam Patel",
+            driverPhone = "+1 (555) 601-3329",
+            driverVehicle = "Honda PCX • #EF-903",
+            itemsSummary = "2x Crispy Baja Fish Tacos",
+            chefDietaryInstructions = "Celiac disease strict safety protocol",
+            paymentMethod = "Google Pay"
+        )
+    )
+
+    val initialFavoriteRestaurantIds = listOf("rest_verde", "rest_saffron")
+}
