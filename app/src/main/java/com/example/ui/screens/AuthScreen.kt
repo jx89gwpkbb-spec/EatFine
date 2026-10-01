@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 fun AuthScreen(
     onSignIn: (String, String, (String?) -> Unit) -> Unit,
     onRegister: (String, String, String, (String?) -> Unit) -> Unit,
+    onGuestSignIn: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     var isCreatingAccount by remember { mutableStateOf(false) }
@@ -105,6 +106,16 @@ fun AuthScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (isCreatingAccount) "Already registered? Sign in" else "New to EatFine? Create an account")
+            }
+
+            if (onGuestSignIn != null) {
+                Spacer(Modifier.height(8.dp))
+                androidx.compose.material3.OutlinedButton(
+                    onClick = onGuestSignIn,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Explore as Guest (Skip)")
+                }
             }
         }
     }

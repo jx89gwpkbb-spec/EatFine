@@ -42,7 +42,7 @@ enum class CustomerTab(val label: String) {
 
 class EatFineViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val authStore = AuthStore()
+    private val authStore = AuthStore(application)
     private val _authUser = MutableStateFlow<AuthUser?>(null)
     val authUser: StateFlow<AuthUser?> = _authUser.asStateFlow()
     private val _authInitialized = MutableStateFlow(false)
@@ -237,6 +237,13 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
                 is AuthResult.Failure -> onResult(result.message)
             }
         }
+    }
+
+    fun guestSignIn() {
+        val guest = authStore.guestSignIn()
+        _authUser.value = guest
+        _activeUserId.value = guest.uid
+        _appMode.value = AppMode.CUSTOMER
     }
 
     fun signOut() {

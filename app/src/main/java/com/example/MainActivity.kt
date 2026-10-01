@@ -137,7 +137,8 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                     onSignIn = { email, password, onResult -> viewModel.signIn(email, password, onResult) },
                     onRegister = { name, email, password, onResult ->
                         viewModel.register(name, email, password, AppMode.CUSTOMER, onResult)
-                    }
+                    },
+                    onGuestSignIn = { viewModel.guestSignIn() }
                 )
             } else when (appMode) {
                 AppMode.CUSTOMER -> {

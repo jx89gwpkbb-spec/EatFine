@@ -2,5 +2,7 @@
   "name": "EatFine",
   "description": "Good Food. Great Moments. Discover restaurants, filter by dietary restrictions, order food, and track deliveries.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

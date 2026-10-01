@@ -75,7 +75,7 @@ interface CartDao {
     @Delete
     suspend fun deleteCartItem(item: CartItemEntity)
 
-    @Query("DELETE FROM cart_items WHERE id = :id")
+    @Query("DELETE FROM cart_items WHERE id = :id AND userId = :userId")
     suspend fun deleteCartItemById(id: String, userId: String)
 
     @Query("DELETE FROM cart_items WHERE userId = :userId")
@@ -96,7 +96,7 @@ interface OrderDao {
     @Update
     suspend fun updateOrder(order: OrderEntity)
 
-    @Query("UPDATE orders SET status = :status WHERE orderId = :orderId")
+    @Query("UPDATE orders SET status = :status WHERE orderId = :orderId AND userId = :userId")
     suspend fun updateOrderStatus(orderId: String, userId: String, status: OrderStatus)
 }
 
