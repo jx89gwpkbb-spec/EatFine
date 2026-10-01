@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.EventSeat
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -58,6 +59,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.platform.LocalContext
+import com.example.ui.components.launchGoogleMaps
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -96,6 +100,7 @@ fun RestaurantDetailScreen(
 
     var selectedDetailTab by remember { mutableIntStateOf(0) } // 0: Menu, 1: Reviews & Ratings
     var isWriteReviewOpen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     var selectedCategory by remember { mutableStateOf("All") }
     val categories = remember(menuItems) {
@@ -298,18 +303,31 @@ fun RestaurantDetailScreen(
                         )
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clickable {
+                                launchGoogleMaps(
+                                    context = context,
+                                    latitude = restaurant.latitude,
+                                    longitude = restaurant.longitude,
+                                    label = restaurant.name
+                                )
+                            }
+                            .testTag("detail_google_maps_button")
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = "Distance",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            imageVector = Icons.Default.Directions,
+                            contentDescription = "Directions on Google Maps",
+                            tint = BrandOrange,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${restaurant.distanceKm} km away",
+                            text = "${restaurant.distanceKm} km (Maps)",
                             fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            fontWeight = FontWeight.Medium,
+                            color = BrandOrange
                         )
                     }
 

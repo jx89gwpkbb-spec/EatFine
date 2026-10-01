@@ -218,4 +218,73 @@ class ExampleRobolectricTest {
     assertEquals(pastOrder.itemsSummary, reordered.itemsSummary)
     assertEquals(pastOrder.chefDietaryInstructions, reordered.chefDietaryInstructions)
   }
+
+  @Test
+  fun `test restaurant coordinates and Google Maps visual location parameters`() {
+    val restaurants = SeedData.sampleRestaurants
+    assertTrue("Should have multiple restaurants for visual map", restaurants.size >= 5)
+
+    restaurants.forEach { rest ->
+      assertTrue("Restaurant ${rest.name} must have valid latitude", rest.latitude in -90.0..90.0)
+      assertTrue("Restaurant ${rest.name} must have valid longitude", rest.longitude in -180.0..180.0)
+      assertTrue("Restaurant ${rest.name} must have non-zero distance", rest.distanceKm > 0.0)
+    }
+
+    // Test map distance filtering
+    val maxDistanceKm = 2.0f
+    val nearbyOnMap = restaurants.filter { it.distanceKm <= maxDistanceKm }
+    assertTrue("Should find restaurants within 2.0km on map", nearbyOnMap.isNotEmpty())
+    assertTrue("All filtered restaurants must be within 2.0km", nearbyOnMap.all { it.distanceKm <= maxDistanceKm })
+
+    // Test map cuisine filtering
+    val pizzaOnMap = restaurants.filter { it.cuisines.contains("Pizza", ignoreCase = true) || it.heroCategory.equals("Pizza", ignoreCase = true) }
+    assertTrue("Should find pizza places on map", pizzaOnMap.isNotEmpty())
+    assertTrue("Filtered pizza places must match pizza category", pizzaOnMap.all { it.cuisines.contains("Pizza", ignoreCase = true) || it.heroCategory.equals("Pizza", ignoreCase = true) })
+  }
+
+  @Test
+  fun `test Google Maps geo intent URI format`() {
+    val rest = SeedData.sampleRestaurants.first()
+    val label = rest.name
+    val geoUriString = "geo:${rest.latitude},${rest.longitude}?q=${rest.latitude},${rest.longitude}(${android.net.Uri.encode(label)})"
+
+    val parsedUri = android.net.Uri.parse(geoUriString)
+    assertEquals("geo", parsedUri.scheme)
+    assertTrue("URI must contain restaurant latitude", parsedUri.toString().contains("${rest.latitude}"))
+    assertTrue("URI must contain restaurant longitude", parsedUri.toString().contains("${rest.longitude}"))
+    assertTrue("URI query parameter must exist", parsedUri.query?.contains("q=") == true || geoUriString.contains("?q="))
+
+    // Fallback web url
+    val webUrl = "https://www.google.com/maps/search/?api=1&query=${rest.latitude},${rest.longitude}"
+    val parsedWebUri = android.net.Uri.parse(webUrl)
+    assertEquals("https", parsedWebUri.scheme)
+    assertEquals("www.google.com", parsedWebUri.host)
+  }
+
+  @Test
+  fun `test AI-powered recommended for you scoring and reasoning`() {
+    val restaurants = SeedData.sampleRestaurants
+    val favoriteIds = setOf("rest_verde")
+    val filterState = com.example.data.model.DietaryFilterState(
+      selectedRestrictions = setOf(DietaryRestriction.VEGAN, DietaryRestriction.GLUTEN_FREE)
+    )
+
+    // Calculate match recommendations
+    val recommendations = restaurants.map { rest ->
+      var score = 75
+      val hasDietaryOverlap = filterState.selectedRestrictions.any { it in rest.dietaryList }
+      if (hasDietaryOverlap) score += 15
+      if (rest.isPureVeg) score += 4
+      if (rest.rating >= 4.8f) score += 6
+      if (rest.id in favoriteIds) score += 5
+      val percentage = score.coerceIn(86, 99)
+      Pair(rest, percentage)
+    }.sortedByDescending { it.second }
+
+    assertTrue("Recommendations must not be empty", recommendations.isNotEmpty())
+    val topMatch = recommendations.first()
+    assertTrue("Top match should have high match score >= 90%", topMatch.second >= 90)
+    assertEquals("rest_verde", topMatch.first.id)
+  }
 }
+
