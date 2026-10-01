@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ import com.example.ui.components.EatFineTopBar
 import com.example.ui.components.FloatingCartBar
 import com.example.ui.components.RealTimeOrderTrackerCompactBar
 import com.example.ui.screens.AdminDashboardScreen
+import com.example.ui.screens.AuthScreen
 import com.example.ui.screens.CartCheckoutScreen
 import com.example.ui.screens.DeliveryPartnerScreen
 import com.example.ui.screens.FavoritesScreen
@@ -61,6 +63,8 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun EatFineApp(viewModel: EatFineViewModel) {
+    val authUser by viewModel.authUser.collectAsStateWithLifecycle()
+    val authInitialized by viewModel.authInitialized.collectAsStateWithLifecycle()
     val appMode by viewModel.appMode.collectAsStateWithLifecycle()
     val customerTab by viewModel.customerTab.collectAsStateWithLifecycle()
     val selectedRestaurantId by viewModel.selectedRestaurantId.collectAsStateWithLifecycle()
@@ -95,17 +99,21 @@ fun EatFineApp(viewModel: EatFineViewModel) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
+        topBar = if (authUser != null) {
+            {
             EatFineTopBar(
                 address = deliveryAddress,
                 currentMode = appMode,
-                onSelectMode = { viewModel.setAppMode(it) },
+                onSignOut = { viewModel.signOut() },
                 activeDietaryCount = filterState.selectedRestrictions.size,
                 onOpenDietaryFilter = { viewModel.setFilterSheetVisible(true) }
             )
+            }
+        } else {
+            {}
         },
         bottomBar = {
-            if (appMode == AppMode.CUSTOMER && trackingOrderId == null && selectedRestaurantId == null && !isCartOpen) {
+            if (authInitialized && authUser != null && appMode == AppMode.CUSTOMER && trackingOrderId == null && selectedRestaurantId == null && !isCartOpen) {
                 EatFineBottomNav(
                     currentTab = customerTab,
                     onTabSelected = { viewModel.setCustomerTab(it) },
@@ -120,7 +128,18 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            when (appMode) {
+            if (!authInitialized) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (authUser == null) {
+                AuthScreen(
+                    onSignIn = { email, password, onResult -> viewModel.signIn(email, password, onResult) },
+                    onRegister = { name, email, password, onResult ->
+                        viewModel.register(name, email, password, AppMode.CUSTOMER, onResult)
+                    }
+                )
+            } else when (appMode) {
                 AppMode.CUSTOMER -> {
                     when {
                         // 1. Live Order Tracking View
@@ -312,7 +331,8 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                                     ProfileScreen(
                                         rewardPoints = rewardPoints,
                                         address = deliveryAddress,
-                                        onSelectMode = { viewModel.setAppMode(it) }
+                                        accountName = authUser?.name.orEmpty(),
+                                        accountEmail = authUser?.email.orEmpty()
                                     )
                                 }
                             }

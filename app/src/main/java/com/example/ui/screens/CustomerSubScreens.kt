@@ -1160,56 +1160,15 @@ fun ProfileScreen(
         modifier = modifier
             .fillMaxSize()
             .testTag("profile_screen"),
-        contentPadding = PaddingValues(16.dp),
+            accountName: String,
+            accountEmail: String,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // User Info Card
-        item {
+                                        text = accountName,
             Card(
-                shape = RoundedCornerShape(16.dp),
+                                    accountEmail,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(14.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(54.dp)
-                            .background(BrandOrange, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(text = "EF", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                    }
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Alex Rivera",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Surface(
-                                color = BrandOrange.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(4.dp)
-                            ) {
-                                Text(
-                                    text = "PLUS MEMBER",
-                                    color = BrandOrange,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                        Text(
-                            text = "alex.rivera@eatfine.com • +1 (555) 234-8901",
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
             }
         }
@@ -1304,47 +1263,5 @@ fun ProfileScreen(
             }
         }
 
-        // Switch to Partner / Delivery / Admin
-        item {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "EATFINE ECOSYSTEM VIEWS",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = BrandOrange
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    OutlinedButton(
-                        onClick = { onSelectMode(AppMode.RESTAURANT_PARTNER) },
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("🏪 Open Restaurant Partner Dashboard")
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    OutlinedButton(
-                        onClick = { onSelectMode(AppMode.DELIVERY_PARTNER) },
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("🛵 Open Delivery Driver App")
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    OutlinedButton(
-                        onClick = { onSelectMode(AppMode.ADMIN) },
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("🛡️ Open Admin Analytics & Control Hub")
-                    }
-                }
-            }
-        }
     }
 }

@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Compile EatFine Kotlin",
+			"type": "shell",
+			"command": "gradle",
+			"args": [
+				":app:compileDebugKotlin",
+				"--console=plain"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

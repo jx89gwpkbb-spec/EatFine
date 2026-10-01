@@ -3,6 +3,9 @@ package com.example.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.auth.AuthResult
+import com.example.data.auth.AuthStore
+import com.example.data.auth.AuthUser
 import com.example.data.local.AppDatabase
 import com.example.data.model.AppMode
 import com.example.data.model.CartItemEntity
@@ -25,6 +28,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 enum class CustomerTab(val label: String) {
     HOME("Home"),
@@ -37,6 +42,12 @@ enum class CustomerTab(val label: String) {
 
 class EatFineViewModel(application: Application) : AndroidViewModel(application) {
 
+    private val authStore = AuthStore()
+    private val _authUser = MutableStateFlow<AuthUser?>(null)
+    val authUser: StateFlow<AuthUser?> = _authUser.asStateFlow()
+    private val _authInitialized = MutableStateFlow(false)
+    val authInitialized: StateFlow<Boolean> = _authInitialized.asStateFlow()
+
     private val repository = EatFineRepository(
         database = AppDatabase.getInstance(application),
         externalScope = viewModelScope
@@ -45,6 +56,21 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
     // Role & Navigation State
     private val _appMode = MutableStateFlow(AppMode.CUSTOMER)
     val appMode: StateFlow<AppMode> = _appMode.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            try {
+                val user = withContext(Dispatchers.IO) { authStore.currentUser() }
+                _authUser.value = user
+                _appMode.value = user?.role ?: AppMode.CUSTOMER
+            } catch (_: Exception) {
+                _authUser.value = null
+                _appMode.value = AppMode.CUSTOMER
+            } finally {
+                _authInitialized.value = true
+            }
+        }
+    }
 
     private val _customerTab = MutableStateFlow(CustomerTab.HOME)
     val customerTab: StateFlow<CustomerTab> = _customerTab.asStateFlow()
@@ -181,8 +207,42 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun signIn(email: String, password: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            when (val result = withContext(Dispatchers.IO) { authStore.signIn(email, password) }) {
+                is AuthResult.Success -> {
+                    _authUser.value = result.user
+                    _appMode.value = result.user.role
+                    onResult(null)
+                }
+                is AuthResult.Failure -> onResult(result.message)
+            }
+        }
+    }
+
+    fun register(name: String, email: String, password: String, role: AppMode, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            when (val result = withContext(Dispatchers.IO) { authStore.register(name, email, password, role) }) {
+                is AuthResult.Success -> {
+                    _authUser.value = result.user
+                    _appMode.value = result.user.role
+                    onResult(null)
+                }
+                is AuthResult.Failure -> onResult(result.message)
+            }
+        }
+    }
+
+    fun signOut() {
+        authStore.signOut()
+        _authUser.value = null
+        _appMode.value = AppMode.CUSTOMER
+        _selectedRestaurantId.value = null
+        _trackingOrderId.value = null
+    }
+
     fun setAppMode(mode: AppMode) {
-        _appMode.value = mode
+        if (_authUser.value?.role == mode) _appMode.value = mode
     }
 
     // Cart & Order Operations

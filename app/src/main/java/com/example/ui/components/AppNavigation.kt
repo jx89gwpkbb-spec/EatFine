@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Restaurant
@@ -75,13 +76,11 @@ import com.example.ui.viewmodel.CustomerTab
 fun EatFineTopBar(
     address: String,
     currentMode: AppMode,
-    onSelectMode: (AppMode) -> Unit,
+    onSignOut: () -> Unit,
     activeDietaryCount: Int,
     onOpenDietaryFilter: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showModeDialog by remember { mutableStateOf(false) }
-
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 2.dp,
@@ -132,113 +131,22 @@ fun EatFineTopBar(
                 )
             }
 
-            // Role Switcher pill
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = when (currentMode) {
-                    AppMode.CUSTOMER -> BrandOrange.copy(alpha = 0.12f)
-                    AppMode.RESTAURANT_PARTNER -> Color(0xFF1971C2).copy(alpha = 0.12f)
-                    AppMode.DELIVERY_PARTNER -> Color(0xFF2B8A3E).copy(alpha = 0.12f)
-                    AppMode.ADMIN -> Color(0xFF7048E8).copy(alpha = 0.12f)
-                },
-                modifier = Modifier
-                    .clickable { showModeDialog = true }
-                    .testTag("app_mode_switcher_button")
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val (icon, title) = when (currentMode) {
-                        AppMode.CUSTOMER -> Icons.Default.Restaurant to "Customer"
-                        AppMode.RESTAURANT_PARTNER -> Icons.Default.Storefront to "Partner"
-                        AppMode.DELIVERY_PARTNER -> Icons.Default.DeliveryDining to "Driver"
-                        AppMode.ADMIN -> Icons.Default.AdminPanelSettings to "Admin"
-                    }
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = title,
-                        modifier = Modifier.size(16.dp),
-                        tint = when (currentMode) {
-                            AppMode.CUSTOMER -> BrandOrange
-                            AppMode.RESTAURANT_PARTNER -> Color(0xFF1971C2)
-                            AppMode.DELIVERY_PARTNER -> Color(0xFF2B8A3E)
-                            AppMode.ADMIN -> Color(0xFF7048E8)
-                        }
-                    )
-                    Text(
-                        text = title,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = when (currentMode) {
-                            AppMode.CUSTOMER -> BrandOrange
-                            AppMode.RESTAURANT_PARTNER -> Color(0xFF1971C2)
-                            AppMode.DELIVERY_PARTNER -> Color(0xFF2B8A3E)
-                            AppMode.ADMIN -> Color(0xFF7048E8)
-                        }
-                    )
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Switch",
-                        modifier = Modifier.size(14.dp)
-                    )
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = when (currentMode) {
+                        AppMode.CUSTOMER -> "Customer"
+                        AppMode.RESTAURANT_PARTNER -> "Business"
+                        AppMode.DELIVERY_PARTNER -> "Delivery"
+                        AppMode.ADMIN -> "Admin"
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onSignOut, modifier = Modifier.size(34.dp)) {
+                    Icon(Icons.Default.Logout, contentDescription = "Sign out", tint = BrandOrange)
                 }
             }
         }
-    }
-
-    if (showModeDialog) {
-        AlertDialog(
-            onDismissRequest = { showModeDialog = false },
-            title = {
-                Text(text = "Switch Platform View", fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        text = "EatFine connects customers, restaurants, drivers and administrators in one ecosystem:",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    AppModeOption(
-                        mode = AppMode.CUSTOMER,
-                        label = "Customer App",
-                        desc = "Order food, filter dietary tags, book tables",
-                        isSelected = currentMode == AppMode.CUSTOMER,
-                        onSelect = { onSelectMode(AppMode.CUSTOMER); showModeDialog = false }
-                    )
-                    AppModeOption(
-                        mode = AppMode.RESTAURANT_PARTNER,
-                        label = "Restaurant Partner Dashboard",
-                        desc = "Accept orders, kitchen prep, toggle items",
-                        isSelected = currentMode == AppMode.RESTAURANT_PARTNER,
-                        onSelect = { onSelectMode(AppMode.RESTAURANT_PARTNER); showModeDialog = false }
-                    )
-                    AppModeOption(
-                        mode = AppMode.DELIVERY_PARTNER,
-                        label = "Delivery Partner App",
-                        desc = "Accept delivery, route map, proof of drop-off",
-                        isSelected = currentMode == AppMode.DELIVERY_PARTNER,
-                        onSelect = { onSelectMode(AppMode.DELIVERY_PARTNER); showModeDialog = false }
-                    )
-                    AppModeOption(
-                        mode = AppMode.ADMIN,
-                        label = "Admin Control Hub",
-                        desc = "Platform analytics, finances, restaurant verifications",
-                        isSelected = currentMode == AppMode.ADMIN,
-                        onSelect = { onSelectMode(AppMode.ADMIN); showModeDialog = false }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showModeDialog = false }) {
-                    Text("Close")
-                }
-            }
-        )
     }
 }
 
