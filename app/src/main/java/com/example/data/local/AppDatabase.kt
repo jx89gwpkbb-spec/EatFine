@@ -23,7 +23,7 @@ import com.example.data.model.ReviewEntity
         FavoriteEntity::class,
         ReviewEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

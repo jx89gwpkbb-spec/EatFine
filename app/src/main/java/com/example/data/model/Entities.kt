@@ -46,7 +46,9 @@ data class RestaurantEntity(
     val offerText: String,
     val bannerDrawableRes: Int,
     val heroCategory: String, // "Pizza", "Healthy", "Burgers", "Biryani", "Bakery"
-    val certificationNote: String = "Kitchen adheres to dietary cross-contamination protocols."
+    val certificationNote: String = "Kitchen adheres to dietary cross-contamination protocols.",
+    val latitude: Double = 37.7749,
+    val longitude: Double = -122.4194
 ) {
     val dietaryList: List<DietaryRestriction>
         get() = dietaryRestrictionsCsv.split(",")

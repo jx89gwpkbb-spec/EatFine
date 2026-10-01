@@ -27,7 +27,9 @@ object SeedData {
             offerText = "20% OFF on all Plant Bowls",
             bannerDrawableRes = R.drawable.eatfine_dietary_promo_1790732440568,
             heroCategory = "Healthy",
-            certificationNote = "Certified 100% Vegan & Dedicated Celiac Gluten-Free Prep Station."
+            certificationNote = "Certified 100% Vegan & Dedicated Celiac Gluten-Free Prep Station.",
+            latitude = 37.7765,
+            longitude = -122.4172
         ),
         RestaurantEntity(
             id = "rest_saffron",
@@ -49,7 +51,9 @@ object SeedData {
             offerText = "Free Garlic Naan with Orders $25+",
             bannerDrawableRes = R.drawable.eatfine_hero_banner_1790732425934,
             heroCategory = "Biryani",
-            certificationNote = "100% Certified Halal Meat and separate Vegetarian preparation tandoor."
+            certificationNote = "100% Certified Halal Meat and separate Vegetarian preparation tandoor.",
+            latitude = 37.7833,
+            longitude = -122.4090
         ),
         RestaurantEntity(
             id = "rest_shanti",
@@ -71,7 +75,9 @@ object SeedData {
             offerText = "Free Delivery on Satvik Thali",
             bannerDrawableRes = R.drawable.eatfine_dietary_promo_1790732440568,
             heroCategory = "Thali",
-            certificationNote = "100% Jain Pure: Zero onion, zero garlic, zero root vegetables."
+            certificationNote = "100% Jain Pure: Zero onion, zero garlic, zero root vegetables.",
+            latitude = 37.7699,
+            longitude = -122.4269
         ),
         RestaurantEntity(
             id = "rest_crust",
@@ -93,7 +99,9 @@ object SeedData {
             offerText = "Buy 1 Artisan Pizza, Get 2nd 50% Off",
             bannerDrawableRes = R.drawable.eatfine_hero_banner_1790732425934,
             heroCategory = "Pizza",
-            certificationNote = "Separate dedicated oven for Gluten-Free cauliflower and almond crusts."
+            certificationNote = "Separate dedicated oven for Gluten-Free cauliflower and almond crusts.",
+            latitude = 37.7983,
+            longitude = -122.4075
         ),
         RestaurantEntity(
             id = "rest_zenith",
@@ -115,7 +123,9 @@ object SeedData {
             offerText = "15% OFF for EatFine Plus Members",
             bannerDrawableRes = R.drawable.eatfine_dietary_promo_1790732440568,
             heroCategory = "Healthy",
-            certificationNote = "Under 8g net carbs per entree, keto-certified cooking oils."
+            certificationNote = "Under 8g net carbs per entree, keto-certified cooking oils.",
+            latitude = 37.7785,
+            longitude = -122.3920
         ),
         RestaurantEntity(
             id = "rest_aura",
@@ -137,7 +147,9 @@ object SeedData {
             offerText = "Free Hummus & Pita with orders over $30",
             bannerDrawableRes = R.drawable.eatfine_hero_banner_1790732425934,
             heroCategory = "Mediterranean",
-            certificationNote = "Halal Certified meats & wide array of Mediterranean vegan mezze."
+            certificationNote = "Halal Certified meats & wide array of Mediterranean vegan mezze.",
+            latitude = 37.8020,
+            longitude = -122.4058
         ),
         RestaurantEntity(
             id = "rest_wholesome",
@@ -159,7 +171,9 @@ object SeedData {
             offerText = "Free Matcha Cookie with Coffee",
             bannerDrawableRes = R.drawable.eatfine_dietary_promo_1790732440568,
             heroCategory = "Bakery",
-            certificationNote = "Zero gluten facility. Dedicated nut-free clean room."
+            certificationNote = "Zero gluten facility. Dedicated nut-free clean room.",
+            latitude = 37.7712,
+            longitude = -122.4367
         )
     )
 

@@ -25,8 +25,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -39,6 +41,10 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,10 +61,12 @@ import com.example.data.model.DietaryFilterState
 import com.example.data.model.DietaryRestriction
 import com.example.data.model.OrderEntity
 import com.example.data.model.RestaurantEntity
+import com.example.ui.components.AiRecommendedSection
 import com.example.ui.components.DietaryBadge
 import com.example.ui.components.DietaryFilterPillsRow
 import com.example.ui.components.RealTimeOrderTrackingCard
 import com.example.ui.components.RestaurantCard
+import com.example.ui.components.RestaurantMapView
 import com.example.ui.theme.BrandOrange
 import com.example.ui.theme.FreshGreen
 
@@ -81,12 +89,26 @@ fun HomeScreen(
     onAdvanceOrderStatus: ((String) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxSize()
-            .testTag("home_screen"),
-        contentPadding = PaddingValues(bottom = 90.dp)
-    ) {
+    var isMapView by remember { mutableStateOf(false) }
+
+    if (isMapView) {
+        RestaurantMapView(
+            restaurants = restaurants,
+            onSelectRestaurant = onSelectRestaurant,
+            onSwitchToListView = { isMapView = false },
+            modifier = modifier
+                .fillMaxSize()
+                .testTag("home_map_view")
+        )
+    } else {
+        val quickCuisineShortcuts = listOf("All", "Pizza", "Healthy", "Biryani", "Keto", "Mediterranean", "Bakery")
+
+        LazyColumn(
+            modifier = modifier
+                .fillMaxSize()
+                .testTag("home_screen"),
+            contentPadding = PaddingValues(bottom = 90.dp)
+        ) {
         // Hero Tagline & Search Header
         item {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -139,7 +161,7 @@ fun HomeScreen(
                     onValueChange = onSearchQueryChange,
                     placeholder = {
                         Text(
-                            text = "Search pizza, vegan bowls, halal biryani...",
+                            text = "Search by name or cuisine (Pizza, Vegan, Halal...)",
                             fontSize = 13.sp
                         )
                     },
@@ -177,6 +199,113 @@ fun HomeScreen(
                         .fillMaxWidth()
                         .testTag("home_search_input")
                 )
+
+                // Quick Cuisine Filter Shortcuts Row
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    quickCuisineShortcuts.forEach { cuisine ->
+                        val isSelected = (cuisine == "All" && filterState.query.isEmpty()) ||
+                                filterState.query.equals(cuisine, ignoreCase = true)
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) BrandOrange else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                            modifier = Modifier.clickable {
+                                if (cuisine == "All") {
+                                    onSearchQueryChange("")
+                                } else {
+                                    onSearchQueryChange(cuisine)
+                                }
+                            }
+                        ) {
+                            Text(
+                                text = cuisine,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // View Mode Switcher (List vs Map)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (isMapView) "Map View • Visual Dining Explorer" else "Showing ${restaurants.size} dietary spots",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.testTag("view_mode_toggle")
+                    ) {
+                        Row(modifier = Modifier.padding(3.dp)) {
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (!isMapView) BrandOrange else Color.Transparent,
+                                modifier = Modifier.clickable { isMapView = false }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ViewList,
+                                        contentDescription = null,
+                                        tint = if (!isMapView) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        text = "List",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (!isMapView) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = if (isMapView) BrandOrange else Color.Transparent,
+                                modifier = Modifier.clickable { isMapView = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Map,
+                                        contentDescription = null,
+                                        tint = if (isMapView) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        text = "Map",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (isMapView) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -380,6 +509,16 @@ fun HomeScreen(
             }
         }
 
+        // AI-Powered 'Recommended for You' Section (User Request #4)
+        item {
+            AiRecommendedSection(
+                restaurants = restaurants,
+                favoriteIds = favoriteIds,
+                filterState = filterState,
+                onSelectRestaurant = onSelectRestaurant
+            )
+        }
+
         // Restaurants List Header
         item {
             Row(
@@ -473,3 +612,6 @@ fun HomeScreen(
         }
     }
 }
+}
+
+
