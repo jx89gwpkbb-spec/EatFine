@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.CartItemEntity
 import com.example.data.model.FavoriteEntity
 import com.example.data.model.MenuItemEntity
@@ -23,7 +25,7 @@ import com.example.data.model.ReviewEntity
         FavoriteEntity::class,
         ReviewEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -37,6 +39,22 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun reviewDao(): ReviewDao
 
     companion object {
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE cart_items ADD COLUMN userId TEXT NOT NULL DEFAULT ''")
+                database.execSQL("ALTER TABLE orders ADD COLUMN userId TEXT NOT NULL DEFAULT ''")
+                database.execSQL("ALTER TABLE reservations ADD COLUMN userId TEXT NOT NULL DEFAULT ''")
+                database.execSQL(
+                    "CREATE TABLE favorites_new (userId TEXT NOT NULL, restaurantId TEXT NOT NULL, savedTimestamp INTEGER NOT NULL, PRIMARY KEY(userId, restaurantId))"
+                )
+                database.execSQL(
+                    "INSERT INTO favorites_new (userId, restaurantId, savedTimestamp) SELECT '', restaurantId, savedTimestamp FROM favorites"
+                )
+                database.execSQL("DROP TABLE favorites")
+                database.execSQL("ALTER TABLE favorites_new RENAME TO favorites")
+            }
+        }
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -46,7 +64,7 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "eatfine_database.db"
-                ).fallbackToDestructiveMigration().build()
+                ).addMigrations(MIGRATION_1_2).build()
                 INSTANCE = instance
                 instance
             }

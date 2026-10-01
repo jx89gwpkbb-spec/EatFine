@@ -47,9 +47,11 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
     val authUser: StateFlow<AuthUser?> = _authUser.asStateFlow()
     private val _authInitialized = MutableStateFlow(false)
     val authInitialized: StateFlow<Boolean> = _authInitialized.asStateFlow()
+    private val _activeUserId = MutableStateFlow<String?>(null)
 
     private val repository = EatFineRepository(
         database = AppDatabase.getInstance(application),
+        userId = _activeUserId,
         externalScope = viewModelScope
     )
 
@@ -62,9 +64,11 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
             try {
                 val user = withContext(Dispatchers.IO) { authStore.currentUser() }
                 _authUser.value = user
+                _activeUserId.value = user?.uid
                 _appMode.value = user?.role ?: AppMode.CUSTOMER
             } catch (_: Exception) {
                 _authUser.value = null
+                _activeUserId.value = null
                 _appMode.value = AppMode.CUSTOMER
             } finally {
                 _authInitialized.value = true
@@ -212,6 +216,7 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
             when (val result = withContext(Dispatchers.IO) { authStore.signIn(email, password) }) {
                 is AuthResult.Success -> {
                     _authUser.value = result.user
+                    _activeUserId.value = result.user.uid
                     _appMode.value = result.user.role
                     onResult(null)
                 }
@@ -225,6 +230,7 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
             when (val result = withContext(Dispatchers.IO) { authStore.register(name, email, password, role) }) {
                 is AuthResult.Success -> {
                     _authUser.value = result.user
+                    _activeUserId.value = result.user.uid
                     _appMode.value = result.user.role
                     onResult(null)
                 }
@@ -236,6 +242,7 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
     fun signOut() {
         authStore.signOut()
         _authUser.value = null
+        _activeUserId.value = null
         _appMode.value = AppMode.CUSTOMER
         _selectedRestaurantId.value = null
         _trackingOrderId.value = null

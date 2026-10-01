@@ -60,35 +60,35 @@ interface MenuItemDao {
 
 @Dao
 interface CartDao {
-    @Query("SELECT * FROM cart_items")
-    fun getCartItems(): Flow<List<CartItemEntity>>
+    @Query("SELECT * FROM cart_items WHERE userId = :userId")
+    fun getCartItems(userId: String): Flow<List<CartItemEntity>>
 
-    @Query("SELECT * FROM cart_items WHERE menuItemId = :menuItemId LIMIT 1")
-    suspend fun getItemByMenuId(menuItemId: String): CartItemEntity?
+    @Query("SELECT * FROM cart_items WHERE menuItemId = :menuItemId AND userId = :userId LIMIT 1")
+    suspend fun getItemByMenuId(menuItemId: String, userId: String): CartItemEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCartItem(item: CartItemEntity)
 
-    @Update
-    suspend fun updateCartItem(item: CartItemEntity)
+    @Query("UPDATE cart_items SET quantity = :quantity WHERE id = :id AND userId = :userId")
+    suspend fun updateCartItemQuantity(id: String, userId: String, quantity: Int)
 
     @Delete
     suspend fun deleteCartItem(item: CartItemEntity)
 
     @Query("DELETE FROM cart_items WHERE id = :id")
-    suspend fun deleteCartItemById(id: String)
+    suspend fun deleteCartItemById(id: String, userId: String)
 
-    @Query("DELETE FROM cart_items")
-    suspend fun clearCart()
+    @Query("DELETE FROM cart_items WHERE userId = :userId")
+    suspend fun clearCart(userId: String)
 }
 
 @Dao
 interface OrderDao {
-    @Query("SELECT * FROM orders ORDER BY placedTimestamp DESC")
-    fun getAllOrders(): Flow<List<OrderEntity>>
+    @Query("SELECT * FROM orders WHERE userId = :userId ORDER BY placedTimestamp DESC")
+    fun getAllOrders(userId: String): Flow<List<OrderEntity>>
 
-    @Query("SELECT * FROM orders WHERE orderId = :orderId")
-    fun getOrderById(orderId: String): Flow<OrderEntity?>
+    @Query("SELECT * FROM orders WHERE orderId = :orderId AND userId = :userId")
+    fun getOrderById(orderId: String, userId: String): Flow<OrderEntity?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrder(order: OrderEntity)
@@ -97,13 +97,13 @@ interface OrderDao {
     suspend fun updateOrder(order: OrderEntity)
 
     @Query("UPDATE orders SET status = :status WHERE orderId = :orderId")
-    suspend fun updateOrderStatus(orderId: String, status: OrderStatus)
+    suspend fun updateOrderStatus(orderId: String, userId: String, status: OrderStatus)
 }
 
 @Dao
 interface ReservationDao {
-    @Query("SELECT * FROM reservations ORDER BY bookedTimestamp DESC")
-    fun getAllReservations(): Flow<List<ReservationEntity>>
+    @Query("SELECT * FROM reservations WHERE userId = :userId ORDER BY bookedTimestamp DESC")
+    fun getAllReservations(userId: String): Flow<List<ReservationEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReservation(reservation: ReservationEntity)
@@ -114,17 +114,17 @@ interface ReservationDao {
 
 @Dao
 interface FavoriteDao {
-    @Query("SELECT restaurantId FROM favorites")
-    fun getFavoriteIds(): Flow<List<String>>
+    @Query("SELECT restaurantId FROM favorites WHERE userId = :userId")
+    fun getFavoriteIds(userId: String): Flow<List<String>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addFavorite(favorite: FavoriteEntity)
 
-    @Query("DELETE FROM favorites WHERE restaurantId = :restaurantId")
-    suspend fun removeFavorite(restaurantId: String)
+    @Query("DELETE FROM favorites WHERE restaurantId = :restaurantId AND userId = :userId")
+    suspend fun removeFavorite(restaurantId: String, userId: String)
 
-    @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE restaurantId = :restaurantId)")
-    suspend fun isFavorite(restaurantId: String): Boolean
+    @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE restaurantId = :restaurantId AND userId = :userId)")
+    suspend fun isFavorite(restaurantId: String, userId: String): Boolean
 }
 
 @Dao

@@ -86,7 +86,8 @@ data class CartItemEntity(
     val quantity: Int,
     val isVeg: Boolean,
     val dietaryRestrictionsCsv: String,
-    val specialDietaryNote: String = ""
+    val specialDietaryNote: String = "",
+    val userId: String = ""
 )
 
 @Entity(tableName = "orders")
@@ -109,7 +110,8 @@ data class OrderEntity(
     val driverVehicle: String = "Honda Eco Scooter • #EF-789",
     val itemsSummary: String, // JSON or formatted text of items
     val chefDietaryInstructions: String = "",
-    val paymentMethod: String = "EatFine Pay (Card)"
+    val paymentMethod: String = "EatFine Pay (Card)",
+    val userId: String = ""
 )
 
 @Entity(tableName = "reservations")
@@ -122,7 +124,8 @@ data class ReservationEntity(
     val guests: Int,
     val dietaryNotes: String, // e.g. "2 Vegan, 1 Gluten-Free guest"
     val status: String = "Confirmed",
-    val bookedTimestamp: Long = System.currentTimeMillis()
+    val bookedTimestamp: Long = System.currentTimeMillis(),
+    val userId: String = ""
 )
 
 @Entity(tableName = "reviews")
@@ -136,9 +139,10 @@ data class ReviewEntity(
     val date: String
 )
 
-@Entity(tableName = "favorites")
+@Entity(tableName = "favorites", primaryKeys = ["userId", "restaurantId"])
 data class FavoriteEntity(
-    @PrimaryKey val restaurantId: String,
+    val userId: String,
+    val restaurantId: String,
     val savedTimestamp: Long = System.currentTimeMillis()
 )
 

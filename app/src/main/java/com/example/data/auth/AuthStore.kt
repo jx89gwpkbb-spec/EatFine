@@ -9,7 +9,7 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException
 import com.google.firebase.firestore.FirebaseFirestore
 
-data class AuthUser(val name: String, val email: String, val role: AppMode)
+data class AuthUser(val name: String, val email: String, val role: AppMode, val uid: String)
 
 sealed interface AuthResult {
     data class Success(val user: AuthUser) : AuthResult
@@ -30,7 +30,8 @@ class AuthStore {
         return AuthUser(
             name = snapshot.getString("name").orEmpty(),
             email = snapshot.getString("email") ?: firebaseUser.email.orEmpty(),
-            role = roleFromClaims(firebaseUser)
+            role = roleFromClaims(firebaseUser),
+            uid = firebaseUser.uid
         )
     }
 
@@ -48,7 +49,7 @@ class AuthStore {
         return try {
             val firebaseUser = Tasks.await(auth.createUserWithEmailAndPassword(normalizedEmail, password)).user
                 ?: return AuthResult.Failure("Unable to create your account. Please try again.")
-            val profile = AuthUser(name.trim(), normalizedEmail, role)
+            val profile = AuthUser(name.trim(), normalizedEmail, role, firebaseUser.uid)
             try {
                 Tasks.await(
                     profiles.document(firebaseUser.uid).set(
@@ -84,7 +85,8 @@ class AuthStore {
                 AuthUser(
                     name = snapshot.getString("name").orEmpty(),
                     email = snapshot.getString("email") ?: firebaseUser.email.orEmpty(),
-                    role = roleFromClaims(firebaseUser)
+                    role = roleFromClaims(firebaseUser),
+                    uid = firebaseUser.uid
                 )
             )
         } catch (error: Exception) {
@@ -97,7 +99,7 @@ class AuthStore {
     }
 
     private fun roleFromClaims(firebaseUser: com.google.firebase.auth.FirebaseUser): AppMode {
-        val role = Tasks.await(firebaseUser.getIdToken(false)).claims["role"] as? String
+        val role = Tasks.await(firebaseUser.getIdToken(true)).claims["role"] as? String
         return runCatching { AppMode.valueOf(role ?: AppMode.CUSTOMER.name) }
             .getOrDefault(AppMode.CUSTOMER)
     }

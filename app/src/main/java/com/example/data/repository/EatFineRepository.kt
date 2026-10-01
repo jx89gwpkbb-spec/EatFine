@@ -16,8 +16,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -26,6 +29,7 @@ import java.util.UUID
 
 class EatFineRepository(
     private val database: AppDatabase,
+    private val userId: StateFlow<String?>,
     private val externalScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 ) {
     private val restaurantDao = database.restaurantDao()
@@ -48,29 +52,6 @@ class EatFineRepository(
             menuItemDao.insertMenuItems(SeedData.sampleMenuItems)
             for (rev in SeedData.sampleReviews) {
                 reviewDao.insertReview(rev)
-            }
-            orderDao.insertOrder(SeedData.sampleOngoingOrder)
-            for (past in SeedData.samplePastOrders) {
-                orderDao.insertOrder(past)
-            }
-            for (favId in SeedData.initialFavoriteRestaurantIds) {
-                favoriteDao.addFavorite(FavoriteEntity(favId))
-            }
-        } else {
-            val existingOrders = orderDao.getAllOrders().first()
-            if (existingOrders.isEmpty()) {
-                orderDao.insertOrder(SeedData.sampleOngoingOrder)
-            }
-            if (existingOrders.size <= 1) {
-                for (past in SeedData.samplePastOrders) {
-                    orderDao.insertOrder(past)
-                }
-            }
-            val existingFavorites = favoriteDao.getFavoriteIds().first()
-            if (existingFavorites.isEmpty()) {
-                for (favId in SeedData.initialFavoriteRestaurantIds) {
-                    favoriteDao.addFavorite(FavoriteEntity(favId))
-                }
             }
         }
     }
@@ -135,21 +116,24 @@ class EatFineRepository(
     }
 
     // Cart Operations
-    fun getCartItems(): Flow<List<CartItemEntity>> = cartDao.getCartItems()
+    fun getCartItems(): Flow<List<CartItemEntity>> = userId.flatMapLatest { uid ->
+        if (uid == null) flowOf(emptyList()) else cartDao.getCartItems(uid)
+    }
 
     suspend fun addToCart(
         menuItem: MenuItemEntity,
         specialDietaryNote: String = ""
     ): Boolean {
-        val currentItems = cartDao.getCartItems().first()
+        val uid = userId.value ?: return false
+        val currentItems = cartDao.getCartItems(uid).first()
         // If cart has items from another restaurant, reset cart to new restaurant
         if (currentItems.isNotEmpty() && currentItems.first().restaurantId != menuItem.restaurantId) {
-            cartDao.clearCart()
+            cartDao.clearCart(uid)
         }
 
-        val existing = cartDao.getItemByMenuId(menuItem.id)
+        val existing = cartDao.getItemByMenuId(menuItem.id, uid)
         if (existing != null) {
-            cartDao.updateCartItem(existing.copy(quantity = existing.quantity + 1))
+            cartDao.updateCartItemQuantity(existing.id, uid, existing.quantity + 1)
         } else {
             cartDao.insertCartItem(
                 CartItemEntity(
@@ -161,7 +145,8 @@ class EatFineRepository(
                     quantity = 1,
                     isVeg = menuItem.isVeg,
                     dietaryRestrictionsCsv = menuItem.dietaryRestrictionsCsv,
-                    specialDietaryNote = specialDietaryNote
+                    specialDietaryNote = specialDietaryNote,
+                    userId = uid
                 )
             )
         }
@@ -169,21 +154,28 @@ class EatFineRepository(
     }
 
     suspend fun updateCartQuantity(cartItemId: String, newQuantity: Int) {
+        val uid = userId.value ?: return
         if (newQuantity <= 0) {
-            cartDao.deleteCartItemById(cartItemId)
+            cartDao.deleteCartItemById(cartItemId, uid)
         } else {
-            val items = cartDao.getCartItems().first()
+            val items = cartDao.getCartItems(uid).first()
             val item = items.find { it.id == cartItemId } ?: return
-            cartDao.updateCartItem(item.copy(quantity = newQuantity))
+            cartDao.updateCartItemQuantity(item.id, uid, newQuantity)
         }
     }
 
-    suspend fun clearCart() = cartDao.clearCart()
+    suspend fun clearCart() {
+        userId.value?.let { cartDao.clearCart(it) }
+    }
 
     // Orders
-    fun getAllOrders(): Flow<List<OrderEntity>> = orderDao.getAllOrders()
+    fun getAllOrders(): Flow<List<OrderEntity>> = userId.flatMapLatest { uid ->
+        if (uid == null) flowOf(emptyList()) else orderDao.getAllOrders(uid)
+    }
 
-    fun getOrderById(orderId: String): Flow<OrderEntity?> = orderDao.getOrderById(orderId)
+    fun getOrderById(orderId: String): Flow<OrderEntity?> = userId.flatMapLatest { uid ->
+        if (uid == null) flowOf(null) else orderDao.getOrderById(orderId, uid)
+    }
 
     suspend fun placeOrder(
         restaurant: RestaurantEntity,
@@ -193,6 +185,7 @@ class EatFineRepository(
         appliedCoupon: String?,
         chefDietaryNotes: String
     ): OrderEntity {
+        val uid = userId.value ?: throw IllegalStateException("Sign in before placing an order.")
         val subtotal = cartItems.sumOf { it.price * it.quantity }
         val discount = when (appliedCoupon?.uppercase()) {
             "EATFINE50" -> (subtotal * 0.50).coerceAtMost(10.0)
@@ -220,20 +213,22 @@ class EatFineRepository(
             placedTimestamp = System.currentTimeMillis(),
             estimatedDeliveryMinutes = restaurant.deliveryTimeMin,
             itemsSummary = itemsSummary,
-            chefDietaryInstructions = chefDietaryNotes
+            chefDietaryInstructions = chefDietaryNotes,
+            userId = uid
         )
 
         orderDao.insertOrder(order)
-        cartDao.clearCart()
+        cartDao.clearCart(uid)
         return order
     }
 
     suspend fun updateOrderStatus(orderId: String, status: OrderStatus) {
-        orderDao.updateOrderStatus(orderId, status)
+        userId.value?.let { orderDao.updateOrderStatus(orderId, it, status) }
     }
 
     suspend fun reorderToCart(order: OrderEntity): Int {
-        cartDao.clearCart()
+        val uid = userId.value ?: return 0
+        cartDao.clearCart(uid)
         val menuItems = menuItemDao.getMenuItemsByRestaurant(order.restaurantId).first()
         val itemsParts = order.itemsSummary.split(",")
         var addedCount = 0
@@ -262,7 +257,8 @@ class EatFineRepository(
                         quantity = qty,
                         isVeg = matchedItem.isVeg,
                         dietaryRestrictionsCsv = matchedItem.dietaryRestrictionsCsv,
-                        specialDietaryNote = order.chefDietaryInstructions
+                        specialDietaryNote = order.chefDietaryInstructions,
+                        userId = uid
                     )
                 )
                 addedCount += qty
@@ -272,18 +268,22 @@ class EatFineRepository(
     }
 
     suspend fun instantReorder(order: OrderEntity): OrderEntity {
+        val uid = userId.value ?: throw IllegalStateException("Sign in before reordering.")
         val newOrderId = "EF-" + (100000..999999).random()
         val newOrder = order.copy(
             orderId = newOrderId,
             status = OrderStatus.PLACED,
-            placedTimestamp = System.currentTimeMillis()
+            placedTimestamp = System.currentTimeMillis(),
+            userId = uid
         )
         orderDao.insertOrder(newOrder)
         return newOrder
     }
 
     // Reservations
-    fun getAllReservations(): Flow<List<ReservationEntity>> = reservationDao.getAllReservations()
+    fun getAllReservations(): Flow<List<ReservationEntity>> = userId.flatMapLatest { uid ->
+        if (uid == null) flowOf(emptyList()) else reservationDao.getAllReservations(uid)
+    }
 
     suspend fun bookReservation(
         restaurant: RestaurantEntity,
@@ -292,6 +292,7 @@ class EatFineRepository(
         guests: Int,
         dietaryNotes: String
     ): ReservationEntity {
+        val uid = userId.value ?: throw IllegalStateException("Sign in before booking a reservation.")
         val reservation = ReservationEntity(
             id = UUID.randomUUID().toString(),
             restaurantId = restaurant.id,
@@ -300,21 +301,25 @@ class EatFineRepository(
             time = time,
             guests = guests,
             dietaryNotes = dietaryNotes,
-            status = "Confirmed"
+            status = "Confirmed",
+            userId = uid
         )
         reservationDao.insertReservation(reservation)
         return reservation
     }
 
     // Favorites
-    fun getFavoriteIds(): Flow<List<String>> = favoriteDao.getFavoriteIds()
+    fun getFavoriteIds(): Flow<List<String>> = userId.flatMapLatest { uid ->
+        if (uid == null) flowOf(emptyList()) else favoriteDao.getFavoriteIds(uid)
+    }
 
     suspend fun toggleFavorite(restaurantId: String) {
-        val isFav = favoriteDao.isFavorite(restaurantId)
+        val uid = userId.value ?: return
+        val isFav = favoriteDao.isFavorite(restaurantId, uid)
         if (isFav) {
-            favoriteDao.removeFavorite(restaurantId)
+            favoriteDao.removeFavorite(restaurantId, uid)
         } else {
-            favoriteDao.addFavorite(FavoriteEntity(restaurantId))
+            favoriteDao.addFavorite(FavoriteEntity(userId = uid, restaurantId = restaurantId))
         }
     }
 
