@@ -239,6 +239,16 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    fun resetPassword(email: String, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { authStore.sendPasswordReset(email) }
+            result.fold(
+                onSuccess = { onResult(null) },
+                onFailure = { onResult(it.localizedMessage ?: "Failed to send password reset email.") }
+            )
+        }
+    }
+
     fun guestSignIn() {
         val guest = authStore.guestSignIn()
         _authUser.value = guest

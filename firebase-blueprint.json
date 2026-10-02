@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role-based access control.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique Firebase user ID" },
+        "name": { "type": "string", "description": "User full name" },
+        "email": { "type": "string", "description": "User email address" },
+        "role": { "type": "string", "enum": ["CUSTOMER", "BUSINESS", "DELIVERY", "ADMIN"], "description": "User access role" },
+        "restaurantId": { "type": "string", "description": "Associated restaurant ID for business accounts" },
+        "driverId": { "type": "string", "description": "Associated driver ID for delivery accounts" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Restaurant": {
+      "title": "Restaurant",
+      "description": "Restaurant profile and business details.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique restaurant ID" },
+        "name": { "type": "string", "description": "Restaurant name" },
+        "ownerUid": { "type": "string", "description": "Business owner user ID" },
+        "cuisine": { "type": "string", "description": "Primary cuisine type" },
+        "rating": { "type": "number", "description": "Average review rating" },
+        "deliveryTimeMin": { "type": "integer", "description": "Estimated delivery time in minutes" },
+        "isOpen": { "type": "boolean", "description": "Whether restaurant is currently accepting orders" }
+      },
+      "required": ["id", "name", "cuisine"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer food order with tracking and items summary.",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string", "description": "Unique order identifier" },
+        "userId": { "type": "string", "description": "Customer UID who placed the order" },
+        "restaurantId": { "type": "string", "description": "Restaurant ID for the order" },
+        "driverUid": { "type": "string", "description": "Assigned delivery driver UID" },
+        "status": { "type": "string", "enum": ["PLACED", "CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"], "description": "Current order lifecycle status" },
+        "totalAmount": { "type": "number", "description": "Total order amount in currency" },
+        "itemsSummary": { "type": "string", "description": "Summary of items in the order" },
+        "placedTimestamp": { "type": "string", "format": "date-time", "description": "Order placement timestamp" }
+      },
+      "required": ["orderId", "userId", "restaurantId", "status", "totalAmount"]
+    },
+    "Reservation": {
+      "title": "Reservation",
+      "description": "Table reservation at a restaurant.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique reservation ID" },
+        "userId": { "type": "string", "description": "User UID who made the reservation" },
+        "restaurantId": { "type": "string", "description": "Restaurant ID" },
+        "date": { "type": "string", "description": "Reservation date" },
+        "time": { "type": "string", "description": "Reservation time" },
+        "guests": { "type": "integer", "description": "Number of guests" },
+        "status": { "type": "string", "description": "Reservation status (Confirmed, Cancelled)" }
+      },
+      "required": ["id", "userId", "restaurantId", "date", "time", "guests"]
+    },
+    "Favorite": {
+      "title": "Favorite",
+      "description": "User favorite restaurant marker.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "User UID" },
+        "restaurantId": { "type": "string", "description": "Favorited restaurant ID" },
+        "savedTimestamp": { "type": "string", "format": "date-time", "description": "Saved timestamp" }
+      },
+      "required": ["userId", "restaurantId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles with role permissions"
+    },
+    "/restaurants/{restaurantId}": {
+      "schema": { "$ref": "#/entities/Restaurant" },
+      "description": "Restaurants listing"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/entities/Order" },
+      "description": "Placed food orders"
+    },
+    "/reservations/{reservationId}": {
+      "schema": { "$ref": "#/entities/Reservation" },
+      "description": "Dine-in table reservations"
+    },
+    "/favorites/{favoriteId}": {
+      "schema": { "$ref": "#/entities/Favorite" },
+      "description": "User favorited restaurants"
+    }
+  }
+}

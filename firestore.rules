@@ -10,47 +10,81 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
-    function hasRole(role) {
-      return signedIn() && request.auth.token.role == role;
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function hasUserDoc() {
+      return signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function getUserRole() {
+      return hasUserDoc() ? userDoc().data.role : 'CUSTOMER';
+    }
+
+    function getUserRestaurantId() {
+      return hasUserDoc() && ('restaurantId' in userDoc().data) ? userDoc().data.restaurantId : '';
+    }
+
+    function getUserDriverId() {
+      return hasUserDoc() && ('driverId' in userDoc().data) ? userDoc().data.driverId : request.auth.uid;
     }
 
     function isAdmin() {
-      return hasRole('ADMIN');
+      return signedIn() && (
+        (request.auth.token.role == 'ADMIN') ||
+        (getUserRole() == 'ADMIN')
+      );
     }
 
     function isRestaurantPartner() {
-      return hasRole('RESTAURANT_PARTNER');
+      return signedIn() && (
+        (request.auth.token.role == 'BUSINESS') ||
+        (getUserRole() == 'BUSINESS')
+      );
     }
 
     function isDeliveryPartner() {
-      return hasRole('DELIVERY_PARTNER');
+      return signedIn() && (
+        (request.auth.token.role == 'DELIVERY') ||
+        (getUserRole() == 'DELIVERY')
+      );
     }
 
     match /users/{userId} {
+      // Users can read their own profile; admins can read any profile
       allow read: if isOwner(userId) || isAdmin();
 
+      // PUBLIC SIGN-UP PROTECTION:
+      // New users can only create their own document with role 'CUSTOMER'.
+      // Admin, Business, and Delivery roles CANNOT be self-assigned on public registration.
       allow create: if signedIn()
         && request.auth.uid == userId
-        && request.resource.data.keys().hasAll(['name', 'email', 'role'])
-        && request.resource.data.keys().hasOnly(['name', 'email', 'role'])
-        && request.resource.data.name is string
-        && request.resource.data.email == request.auth.token.email
         && request.resource.data.role == 'CUSTOMER';
 
-      allow update: if isOwner(userId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
-        && request.resource.data.name is string;
+      // Updates: user cannot escalate their own role, restaurantId, or driverId.
+      // Only admins can change roles or work assignments.
+      allow update: if isAdmin() || (
+        isOwner(userId)
+        && request.resource.data.role == resource.data.role
+        && (!('restaurantId' in request.resource.data) || request.resource.data.restaurantId == resource.data.restaurantId)
+        && (!('driverId' in request.resource.data) || request.resource.data.driverId == resource.data.driverId)
+      );
 
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /restaurants/{restaurantId} {
       allow read: if true;
 
-      allow create: if isRestaurantPartner();
+      allow create: if isAdmin();
 
-      allow update: if isRestaurantPartner() && resource.data.ownerUid == request.auth.uid
-        || isAdmin();
+      allow update: if isAdmin() || (
+        isRestaurantPartner() && (
+          resource.data.ownerUid == request.auth.uid ||
+          getUserRestaurantId() == restaurantId
+        )
+      );
 
       allow delete: if isAdmin();
     }
@@ -58,39 +92,46 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow read: if signedIn() && (
         resource.data.userId == request.auth.uid
-        || resource.data.restaurantOwnerUid == request.auth.uid
-        || resource.data.driverUid == request.auth.uid
+        || (isRestaurantPartner() && (resource.data.restaurantId == getUserRestaurantId() || resource.data.restaurantOwnerUid == request.auth.uid))
+        || (isDeliveryPartner() && (resource.data.driverUid == request.auth.uid || resource.data.status in ['CONFIRMED', 'PREPARING', 'OUT_FOR_DELIVERY']))
         || isAdmin()
       );
 
+      // Customers can create their own orders
       allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid
-        && request.resource.data.status == 'PLACED';
+        && request.resource.data.userId == request.auth.uid;
 
+      // Status updates scoped to appropriate role:
+      // Customer can cancel if still PLACED
+      // Restaurant can update status (CONFIRMED, PREPARING)
+      // Delivery agent can update status (OUT_FOR_DELIVERY, DELIVERED)
+      // Admin can update anything
       allow update: if signedIn() && (
-        resource.data.userId == request.auth.uid
-        || resource.data.restaurantOwnerUid == request.auth.uid
-        || resource.data.driverUid == request.auth.uid
+        (resource.data.userId == request.auth.uid && request.resource.data.status == 'CANCELLED')
+        || (isRestaurantPartner() && (resource.data.restaurantId == getUserRestaurantId() || resource.data.restaurantOwnerUid == request.auth.uid))
+        || (isDeliveryPartner() && (resource.data.driverUid == request.auth.uid || resource.data.status == 'PREPARING'))
         || isAdmin()
       );
 
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     match /reservations/{reservationId} {
       allow read: if signedIn() && (
         resource.data.userId == request.auth.uid
-        || resource.data.restaurantOwnerUid == request.auth.uid
+        || (isRestaurantPartner() && (resource.data.restaurantId == getUserRestaurantId() || resource.data.restaurantOwnerUid == request.auth.uid))
         || isAdmin()
       );
 
       allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+
       allow update: if signedIn() && (
         resource.data.userId == request.auth.uid
-        || resource.data.restaurantOwnerUid == request.auth.uid
+        || (isRestaurantPartner() && (resource.data.restaurantId == getUserRestaurantId() || resource.data.restaurantOwnerUid == request.auth.uid))
         || isAdmin()
       );
-      allow delete: if false;
+
+      allow delete: if isAdmin();
     }
 
     match /favorites/{favoriteId} {

@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.AppMode
+import com.example.data.model.OrderStatus
 import com.example.ui.components.DietaryFilterBottomSheet
 import com.example.ui.components.EatFineBottomNav
 import com.example.ui.components.EatFineTopBar
@@ -138,6 +139,7 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                     onRegister = { name, email, password, onResult ->
                         viewModel.register(name, email, password, AppMode.CUSTOMER, onResult)
                     },
+                    onResetPassword = { email, onResult -> viewModel.resetPassword(email, onResult) },
                     onGuestSignIn = { viewModel.guestSignIn() }
                 )
             } else when (appMode) {
@@ -333,7 +335,12 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                                         rewardPoints = rewardPoints,
                                         address = deliveryAddress,
                                         accountName = authUser?.name.orEmpty(),
-                                        accountEmail = authUser?.email.orEmpty()
+                                        accountEmail = authUser?.email.orEmpty(),
+                                        accountRole = authUser?.role ?: AppMode.CUSTOMER,
+                                        restaurantId = authUser?.restaurantId,
+                                        driverId = authUser?.driverId,
+                                        onSignOut = { viewModel.signOut() },
+                                        onSelectMode = { viewModel.setAppMode(it) }
                                     )
                                 }
                             }
@@ -361,15 +368,17 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                     }
                 }
 
-                // RESTAURANT PARTNER VIEW
+                // RESTAURANT PARTNER VIEW (Scoped to assigned business restaurant & orders)
                 AppMode.RESTAURANT_PARTNER -> {
-                    val partnerRest = allRestaurants.firstOrNull()
+                    val partnerRest = allRestaurants.find { it.id == authUser?.restaurantId }
+                        ?: allRestaurants.firstOrNull()
                     if (partnerRest != null) {
                         val menuItems by viewModel.getMenuItemsForRestaurant(partnerRest.id)
                             .collectAsState(initial = emptyList())
+                        val restaurantOrders = allOrders.filter { it.restaurantId == partnerRest.id }
                         RestaurantPartnerDashboard(
                             restaurant = partnerRest,
-                            orders = allOrders,
+                            orders = restaurantOrders,
                             menuItems = menuItems,
                             onAdvanceOrderStatus = { viewModel.advanceOrderStatus(it) },
                             onToggleItemAvailability = { id, avail -> viewModel.toggleMenuItemAvailability(id, avail) },
@@ -379,10 +388,18 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                     }
                 }
 
-                // DELIVERY PARTNER VIEW
+                // DELIVERY PARTNER VIEW (Scoped to driver profile and dispatched delivery orders)
                 AppMode.DELIVERY_PARTNER -> {
+                    val driverOrders = allOrders.filter {
+                        it.status in listOf(
+                            OrderStatus.ACCEPTED,
+                            OrderStatus.PREPARING,
+                            OrderStatus.READY_FOR_PICKUP,
+                            OrderStatus.ON_THE_WAY
+                        )
+                    }
                     DeliveryPartnerScreen(
-                        orders = allOrders,
+                        orders = driverOrders,
                         onAdvanceOrderStatus = { viewModel.advanceOrderStatus(it) },
                         onSwitchMode = { viewModel.setAppMode(it) }
                     )

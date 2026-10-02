@@ -1155,6 +1155,10 @@ fun ProfileScreen(
     address: String,
     accountName: String = "",
     accountEmail: String = "",
+    accountRole: AppMode = AppMode.CUSTOMER,
+    restaurantId: String? = null,
+    driverId: String? = null,
+    onSignOut: (() -> Unit)? = null,
     onSelectMode: ((AppMode) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -1203,7 +1207,12 @@ fun ProfileScreen(
                                 shape = RoundedCornerShape(4.dp)
                             ) {
                                 Text(
-                                    text = "PLUS MEMBER",
+                                    text = when (accountRole) {
+                                        AppMode.ADMIN -> "PLATFORM ADMIN"
+                                        AppMode.RESTAURANT_PARTNER -> "BUSINESS PARTNER"
+                                        AppMode.DELIVERY_PARTNER -> "DELIVERY AGENT"
+                                        AppMode.CUSTOMER -> "PLUS MEMBER"
+                                    },
                                     color = BrandOrange,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
@@ -1216,6 +1225,71 @@ fun ProfileScreen(
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (restaurantId != null) {
+                            Text(
+                                text = "Associated Restaurant: $restaurantId",
+                                fontSize = 11.sp,
+                                color = BrandOrange,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        if (driverId != null) {
+                            Text(
+                                text = "Driver Profile ID: $driverId",
+                                fontSize = 11.sp,
+                                color = BrandOrange,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Role Dashboard Switcher for Admin / Business / Delivery
+        if (accountRole != AppMode.CUSTOMER && onSelectMode != null) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Work Dashboard Access",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (accountRole == AppMode.RESTAURANT_PARTNER || accountRole == AppMode.ADMIN) {
+                                Button(
+                                    onClick = { onSelectMode(AppMode.RESTAURANT_PARTNER) },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Restaurant Hub", fontSize = 12.sp)
+                                }
+                            }
+                            if (accountRole == AppMode.DELIVERY_PARTNER || accountRole == AppMode.ADMIN) {
+                                Button(
+                                    onClick = { onSelectMode(AppMode.DELIVERY_PARTNER) },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Driver Hub", fontSize = 12.sp)
+                                }
+                            }
+                            if (accountRole == AppMode.ADMIN) {
+                                Button(
+                                    onClick = { onSelectMode(AppMode.ADMIN) },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("Admin Hub", fontSize = 12.sp)
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -1311,5 +1385,19 @@ fun ProfileScreen(
             }
         }
 
+        // Sign Out Button
+        if (onSignOut != null) {
+            item {
+                OutlinedButton(
+                    onClick = onSignOut,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .testTag("profile_sign_out_button")
+                ) {
+                    Text("Sign Out of EatFine", color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
     }
 }

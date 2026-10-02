@@ -1,5 +1,8 @@
 {
-  "firestore": {
-    "rules": "firestore.rules"
-  }
+  "firestore": [
+    {
+      "database": "ai-studio-android-eatfine-843821e6-404f-47a6-b22a-2d675a5a4d40",
+      "rules": "firestore.rules"
+    }
+  ]
 }
