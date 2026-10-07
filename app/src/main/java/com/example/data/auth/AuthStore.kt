@@ -3,6 +3,8 @@ package com.example.data.auth
 import android.content.Context
 import com.example.R
 import com.example.data.model.AppMode
+import com.example.data.model.UserProfile
+import com.example.data.model.UserRole
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
@@ -72,15 +74,18 @@ class AuthStore(private val context: Context? = null) {
                     if (firestoreDb != null) {
                         val snapshot = Tasks.await(firestoreDb.collection("users").document(firebaseUser.uid).get())
                         if (snapshot.exists()) {
-                            val roleStr = snapshot.getString("role") ?: AppMode.CUSTOMER.name
-                            val userRole = runCatching { AppMode.valueOf(roleStr) }.getOrDefault(AppMode.CUSTOMER)
+                            val userProfile = runCatching { snapshot.toObject(UserProfile::class.java) }.getOrNull()
+                            val roleStr = userProfile?.role ?: snapshot.getString("role") ?: UserRole.CUSTOMER.value
+                            val userRole = UserRole.fromValue(roleStr).toAppMode()
                             val user = AuthUser(
-                                name = snapshot.getString("name").orEmpty().ifBlank { firebaseUser.displayName ?: "EatFine Diner" },
-                                email = snapshot.getString("email") ?: firebaseUser.email.orEmpty(),
+                                name = userProfile?.name?.ifBlank { null }
+                                    ?: snapshot.getString("name").orEmpty().ifBlank { firebaseUser.displayName ?: "EatFine Diner" },
+                                email = userProfile?.email?.ifBlank { null }
+                                    ?: snapshot.getString("email") ?: firebaseUser.email.orEmpty(),
                                 role = userRole,
                                 uid = firebaseUser.uid,
-                                restaurantId = snapshot.getString("restaurantId"),
-                                driverId = snapshot.getString("driverId")
+                                restaurantId = userProfile?.restaurantId ?: snapshot.getString("restaurantId"),
+                                driverId = userProfile?.driverId ?: snapshot.getString("driverId")
                             )
                             saveLocal(user)
                             return user
@@ -132,15 +137,14 @@ class AuthStore(private val context: Context? = null) {
                     try {
                         val firestoreDb = firestore
                         if (firestoreDb != null) {
+                            val userProfile = UserProfile(
+                                userId = firebaseUser.uid,
+                                email = profile.email,
+                                role = UserRole.CUSTOMER.value,
+                                name = profile.name
+                            )
                             Tasks.await(
-                                firestoreDb.collection("users").document(firebaseUser.uid).set(
-                                    mapOf(
-                                        "uid" to profile.uid,
-                                        "name" to profile.name,
-                                        "email" to profile.email,
-                                        "role" to profile.role.name
-                                    )
-                                )
+                                firestoreDb.collection("users").document(firebaseUser.uid).set(userProfile.toMap())
                             )
                         }
                     } catch (_: Exception) {}
@@ -271,6 +275,84 @@ class AuthStore(private val context: Context? = null) {
     fun signOut() {
         runCatching { auth?.signOut() }
         prefs?.edit()?.clear()?.commit()
+    }
+
+    private val extraUsers = mutableListOf<AuthUser>()
+
+    fun getAllUsers(): List<AuthUser> {
+        val baseList = listOf(
+            AuthUser("Platform Administrator", "admin@eatfine.com", AppMode.ADMIN, "admin_provisioned_01"),
+            AuthUser("Rustic Fork Manager", "partner@eatfine.com", AppMode.RESTAURANT_PARTNER, "partner_provisioned_01", restaurantId = "rest_1"),
+            AuthUser("David Driver", "driver@eatfine.com", AppMode.DELIVERY_PARTNER, "driver_provisioned_01", driverId = "driver_1"),
+            AuthUser("Alex Rivera", "customer@eatfine.com", AppMode.CUSTOMER, "customer_provisioned_01")
+        )
+        return (baseList + extraUsers).distinctBy { it.email.lowercase() }
+    }
+
+    fun adminCreateUser(
+        name: String,
+        email: String,
+        password: String,
+        role: AppMode,
+        restaurantId: String? = null,
+        driverId: String? = null
+    ): AuthResult {
+        val normalizedEmail = email.trim().lowercase()
+        if (name.isBlank() || !normalizedEmail.contains("@")) {
+            return AuthResult.Failure("Enter a valid name and email address.")
+        }
+        if (password.length < 6) {
+            return AuthResult.Failure("Password must be at least 6 characters.")
+        }
+        if (getAllUsers().any { it.email.equals(normalizedEmail, ignoreCase = true) }) {
+            return AuthResult.Failure("A user with email $normalizedEmail already exists.")
+        }
+
+        val uid = "user_" + UUID.randomUUID().toString().take(8)
+        val newUser = AuthUser(
+            name = name.trim(),
+            email = normalizedEmail,
+            role = role,
+            uid = uid,
+            restaurantId = restaurantId,
+            driverId = driverId
+        )
+
+        val firebaseAuth = auth
+        if (firebaseAuth != null) {
+            try {
+                val firebaseUser = Tasks.await(firebaseAuth.createUserWithEmailAndPassword(normalizedEmail, password)).user
+                if (firebaseUser != null) {
+                    val firestoreDb = firestore
+                    if (firestoreDb != null) {
+                        val userProfile = UserProfile.fromAppMode(
+                            userId = firebaseUser.uid,
+                            email = newUser.email,
+                            name = newUser.name,
+                            mode = role,
+                            restaurantId = newUser.restaurantId,
+                            driverId = newUser.driverId
+                        )
+                        Tasks.await(
+                            firestoreDb.collection("users").document(firebaseUser.uid).set(userProfile.toMap())
+                        )
+                    }
+                }
+            } catch (_: Exception) {}
+        }
+
+        extraUsers.add(newUser)
+        return AuthResult.Success(newUser)
+    }
+
+    fun adminUpdateUserRole(uid: String, newRole: AppMode, restaurantId: String? = null, driverId: String? = null): Boolean {
+        val index = extraUsers.indexOfFirst { it.uid == uid }
+        if (index != -1) {
+            val old = extraUsers[index]
+            extraUsers[index] = old.copy(role = newRole, restaurantId = restaurantId, driverId = driverId)
+            return true
+        }
+        return false
     }
 
     private fun getProvisionedProfile(email: String): AuthUser? {

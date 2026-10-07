@@ -194,4 +194,180 @@ class AuthAndRoleSecurityTest {
         assertEquals("guest@eatfine.com", guest.email)
         assertEquals("guest_user", guest.uid)
     }
+
+    @Test
+    fun `test admin create user provisions new partners and drivers`() {
+        // Admin creates a restaurant partner
+        val partnerRes = authStore.adminCreateUser(
+            name = "Chef Luigi",
+            email = "luigi@pastaparadiso.com",
+            password = "securePassword123",
+            role = AppMode.RESTAURANT_PARTNER,
+            restaurantId = "rest_2"
+        )
+        assertTrue("Admin creating partner must succeed", partnerRes is AuthResult.Success)
+        val partner = (partnerRes as AuthResult.Success).user
+        assertEquals("Chef Luigi", partner.name)
+        assertEquals(AppMode.RESTAURANT_PARTNER, partner.role)
+        assertEquals("rest_2", partner.restaurantId)
+
+        // Admin creates a delivery driver
+        val driverRes = authStore.adminCreateUser(
+            name = "Racer Rick",
+            email = "rick@eatfine.com",
+            password = "securePassword123",
+            role = AppMode.DELIVERY_PARTNER,
+            driverId = "driver_99"
+        )
+        assertTrue("Admin creating driver must succeed", driverRes is AuthResult.Success)
+        val driver = (driverRes as AuthResult.Success).user
+        assertEquals("Racer Rick", driver.name)
+        assertEquals(AppMode.DELIVERY_PARTNER, driver.role)
+        assertEquals("driver_99", driver.driverId)
+
+        // Check user directory contains new users
+        val allUsers = authStore.getAllUsers()
+        assertTrue("Directory should contain new partner", allUsers.any { it.email == "luigi@pastaparadiso.com" })
+        assertTrue("Directory should contain new driver", allUsers.any { it.email == "rick@eatfine.com" })
+    }
+
+    @Test
+    fun `test admin cannot create duplicate email user`() {
+        val first = authStore.adminCreateUser(
+            name = "Original User",
+            email = "unique@example.com",
+            password = "password123",
+            role = AppMode.CUSTOMER
+        )
+        assertTrue(first is AuthResult.Success)
+
+        val duplicate = authStore.adminCreateUser(
+            name = "Duplicate User",
+            email = "unique@example.com",
+            password = "password456",
+            role = AppMode.CUSTOMER
+        )
+        assertTrue("Duplicate creation should fail", duplicate is AuthResult.Failure)
+    }
+
+    @Test
+    fun `test settings models updates`() {
+        val userSettings = com.example.data.model.UserProfileSettings(
+            displayName = "Alex",
+            phone = "+1 555 1234",
+            defaultAddress = "123 Main St",
+            contactlessDelivery = true
+        )
+        assertEquals("Alex", userSettings.displayName)
+
+        val adminSettings = com.example.data.model.AdminPlatformSettings(
+            platformCommissionPercent = 18.0,
+            baseDeliveryFee = 3.50,
+            isPlatformOpen = true
+        )
+        assertEquals(18.0, adminSettings.platformCommissionPercent, 0.01)
+
+        val businessSettings = com.example.data.model.BusinessOwnerSettings(
+            restaurantName = "The Rustic Fork",
+            isKitchenBusySurge = true,
+            defaultPrepMinutes = 35
+        )
+        assertTrue(businessSettings.isKitchenBusySurge)
+        assertEquals(35, businessSettings.defaultPrepMinutes)
+
+        val deliverySettings = com.example.data.model.DeliveryAgentSettings(
+            driverName = "David",
+            vehicleType = "Electric Bicycle",
+            isOnline = true
+        )
+        assertEquals("Electric Bicycle", deliverySettings.vehicleType)
+    }
+
+    @Test
+    fun `test UserProfile data model fields and Firestore serialization`() {
+        // Default constructor
+        val defaultProfile = com.example.data.model.UserProfile()
+        assertEquals("", defaultProfile.userId)
+        assertEquals("", defaultProfile.email)
+        assertEquals("customer", defaultProfile.role)
+
+        // 3-field constructor with userId, email, and role
+        val customerProfile = com.example.data.model.UserProfile(
+            userId = "usr_cust_01",
+            email = "customer@eatfine.com",
+            role = "customer"
+        )
+        assertEquals("usr_cust_01", customerProfile.userId)
+        assertEquals("customer@eatfine.com", customerProfile.email)
+        assertEquals("customer", customerProfile.role)
+        assertEquals(com.example.data.model.UserRole.CUSTOMER, customerProfile.userRole)
+        assertEquals(AppMode.CUSTOMER, customerProfile.toAppMode())
+
+        // Business owner profile
+        val businessProfile = com.example.data.model.UserProfile(
+            userId = "usr_biz_01",
+            email = "partner@eatfine.com",
+            role = "business_owner"
+        )
+        assertEquals("business_owner", businessProfile.role)
+        assertEquals(com.example.data.model.UserRole.BUSINESS_OWNER, businessProfile.userRole)
+        assertEquals(AppMode.RESTAURANT_PARTNER, businessProfile.toAppMode())
+
+        // Delivery agent profile
+        val deliveryProfile = com.example.data.model.UserProfile(
+            userId = "usr_drv_01",
+            email = "driver@eatfine.com",
+            role = "delivery_agent"
+        )
+        assertEquals("delivery_agent", deliveryProfile.role)
+        assertEquals(com.example.data.model.UserRole.DELIVERY_AGENT, deliveryProfile.userRole)
+        assertEquals(AppMode.DELIVERY_PARTNER, deliveryProfile.toAppMode())
+
+        // Admin profile
+        val adminProfile = com.example.data.model.UserProfile(
+            userId = "usr_adm_01",
+            email = "admin@eatfine.com",
+            role = "admin"
+        )
+        assertEquals("admin", adminProfile.role)
+        assertEquals(com.example.data.model.UserRole.ADMIN, adminProfile.userRole)
+        assertEquals(AppMode.ADMIN, adminProfile.toAppMode())
+
+        // toMap export for Firestore
+        val map = customerProfile.toMap()
+        assertEquals("usr_cust_01", map["userId"])
+        assertEquals("customer@eatfine.com", map["email"])
+        assertEquals("customer", map["role"])
+    }
+
+    @Test
+    fun `test UserProfileRepository stores and retrieves profiles`() = kotlinx.coroutines.runBlocking {
+        val repo = com.example.data.repository.UserProfileRepository("ai-studio-android-eatfine-843821e6-404f-47a6-b22a-2d675a5a4d40", context)
+
+        val profile = com.example.data.model.UserProfile(
+            userId = "test_user_42",
+            email = "tester@eatfine.com",
+            role = "customer"
+        )
+        val saveResult = repo.saveUserProfile(profile)
+        assertTrue("Saving user profile must succeed", saveResult.isSuccess)
+
+        val retrieved = repo.getUserProfile("test_user_42").getOrNull()
+        assertNotNull("Retrieved profile should not be null", retrieved)
+        assertEquals("test_user_42", retrieved?.userId)
+        assertEquals("tester@eatfine.com", retrieved?.email)
+        assertEquals("customer", retrieved?.role)
+
+        // Update role to business_owner
+        val updateResult = repo.updateUserRole("test_user_42", "business_owner")
+        assertTrue("Updating role must succeed", updateResult.isSuccess)
+        val updated = repo.getUserProfile("test_user_42").getOrNull()
+        assertEquals("business_owner", updated?.role)
+
+        // Delete profile
+        val deleteResult = repo.deleteUserProfile("test_user_42")
+        assertTrue("Deleting user profile must succeed", deleteResult.isSuccess)
+        val afterDelete = repo.getUserProfile("test_user_42").getOrNull()
+        assertNull("Profile should be null after delete", afterDelete)
+    }
 }

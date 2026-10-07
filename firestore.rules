@@ -32,22 +32,22 @@ service cloud.firestore {
 
     function isAdmin() {
       return signedIn() && (
-        (request.auth.token.role == 'ADMIN') ||
-        (getUserRole() == 'ADMIN')
+        (request.auth.token.role in ['ADMIN', 'admin']) ||
+        (getUserRole() in ['ADMIN', 'admin'])
       );
     }
 
     function isRestaurantPartner() {
       return signedIn() && (
-        (request.auth.token.role == 'BUSINESS') ||
-        (getUserRole() == 'BUSINESS')
+        (request.auth.token.role in ['BUSINESS', 'business_owner', 'business', 'RESTAURANT_PARTNER']) ||
+        (getUserRole() in ['BUSINESS', 'business_owner', 'business', 'RESTAURANT_PARTNER'])
       );
     }
 
     function isDeliveryPartner() {
       return signedIn() && (
-        (request.auth.token.role == 'DELIVERY') ||
-        (getUserRole() == 'DELIVERY')
+        (request.auth.token.role in ['DELIVERY', 'delivery_agent', 'delivery', 'DELIVERY_PARTNER']) ||
+        (getUserRole() in ['DELIVERY', 'delivery_agent', 'delivery', 'DELIVERY_PARTNER'])
       );
     }
 
@@ -56,11 +56,11 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
 
       // PUBLIC SIGN-UP PROTECTION:
-      // New users can only create their own document with role 'CUSTOMER'.
+      // New users can only create their own document with role 'customer' or 'CUSTOMER'.
       // Admin, Business, and Delivery roles CANNOT be self-assigned on public registration.
       allow create: if signedIn()
         && request.auth.uid == userId
-        && request.resource.data.role == 'CUSTOMER';
+        && (request.resource.data.role in ['CUSTOMER', 'customer']);
 
       // Updates: user cannot escalate their own role, restaurantId, or driverId.
       // Only admins can change roles or work assignments.

@@ -7,8 +7,11 @@ import com.example.data.auth.AuthResult
 import com.example.data.auth.AuthStore
 import com.example.data.auth.AuthUser
 import com.example.data.local.AppDatabase
+import com.example.data.model.AdminPlatformSettings
 import com.example.data.model.AppMode
+import com.example.data.model.BusinessOwnerSettings
 import com.example.data.model.CartItemEntity
+import com.example.data.model.DeliveryAgentSettings
 import com.example.data.model.DeliveryType
 import com.example.data.model.DietaryFilterState
 import com.example.data.model.DietaryRestriction
@@ -19,6 +22,7 @@ import com.example.data.model.ReservationEntity
 import com.example.data.model.RestaurantEntity
 import com.example.data.model.ReviewEntity
 import com.example.data.model.SortOption
+import com.example.data.model.UserProfileSettings
 import com.example.data.repository.EatFineRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -72,8 +76,78 @@ class EatFineViewModel(application: Application) : AndroidViewModel(application)
                 _appMode.value = AppMode.CUSTOMER
             } finally {
                 _authInitialized.value = true
+                refreshPlatformUsers()
             }
         }
+    }
+
+    // --- Settings StateFlows ---
+    private val _userProfileSettings = MutableStateFlow(UserProfileSettings())
+    val userProfileSettings: StateFlow<UserProfileSettings> = _userProfileSettings.asStateFlow()
+
+    fun updateUserProfileSettings(settings: UserProfileSettings) {
+        _userProfileSettings.value = settings
+        deliveryAddress.value = settings.defaultAddress
+        _filterState.value = _filterState.value.copy(selectedRestrictions = settings.selectedDietaryRestrictions)
+    }
+
+    private val _adminPlatformSettings = MutableStateFlow(AdminPlatformSettings())
+    val adminPlatformSettings: StateFlow<AdminPlatformSettings> = _adminPlatformSettings.asStateFlow()
+
+    fun updateAdminPlatformSettings(settings: AdminPlatformSettings) {
+        _adminPlatformSettings.value = settings
+    }
+
+    private val _businessOwnerSettings = MutableStateFlow(BusinessOwnerSettings())
+    val businessOwnerSettings: StateFlow<BusinessOwnerSettings> = _businessOwnerSettings.asStateFlow()
+
+    fun updateBusinessOwnerSettings(settings: BusinessOwnerSettings) {
+        _businessOwnerSettings.value = settings
+        viewModelScope.launch {
+            repository.updateRestaurantOpenStatus(settings.restaurantId, settings.isOpen)
+        }
+    }
+
+    private val _deliveryAgentSettings = MutableStateFlow(DeliveryAgentSettings())
+    val deliveryAgentSettings: StateFlow<DeliveryAgentSettings> = _deliveryAgentSettings.asStateFlow()
+
+    fun updateDeliveryAgentSettings(settings: DeliveryAgentSettings) {
+        _deliveryAgentSettings.value = settings
+    }
+
+    private val _allPlatformUsers = MutableStateFlow<List<AuthUser>>(emptyList())
+    val allPlatformUsers: StateFlow<List<AuthUser>> = _allPlatformUsers.asStateFlow()
+
+    fun refreshPlatformUsers() {
+        _allPlatformUsers.value = authStore.getAllUsers()
+    }
+
+    fun adminCreateUser(
+        name: String,
+        email: String,
+        password: String,
+        role: AppMode,
+        restaurantId: String? = null,
+        driverId: String? = null,
+        onResult: (String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            val res = withContext(Dispatchers.IO) {
+                authStore.adminCreateUser(name, email, password, role, restaurantId, driverId)
+            }
+            when (res) {
+                is AuthResult.Success -> {
+                    refreshPlatformUsers()
+                    onResult(null)
+                }
+                is AuthResult.Failure -> onResult(res.message)
+            }
+        }
+    }
+
+    fun adminUpdateUserRole(uid: String, role: AppMode, restaurantId: String? = null, driverId: String? = null) {
+        authStore.adminUpdateUserRole(uid, role, restaurantId, driverId)
+        refreshPlatformUsers()
     }
 
     private val _customerTab = MutableStateFlow(CustomerTab.HOME)

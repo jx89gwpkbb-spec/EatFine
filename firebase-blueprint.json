@@ -5,15 +5,16 @@
       "description": "User profile with role-based access control.",
       "type": "object",
       "properties": {
-        "uid": { "type": "string", "description": "Unique Firebase user ID" },
+        "userId": { "type": "string", "description": "Unique Firebase user ID" },
+        "uid": { "type": "string", "description": "Unique Firebase user ID (legacy alias)" },
         "name": { "type": "string", "description": "User full name" },
         "email": { "type": "string", "description": "User email address" },
-        "role": { "type": "string", "enum": ["CUSTOMER", "BUSINESS", "DELIVERY", "ADMIN"], "description": "User access role" },
+        "role": { "type": "string", "enum": ["admin", "business_owner", "customer", "delivery_agent", "CUSTOMER", "BUSINESS", "DELIVERY", "ADMIN"], "description": "User access role" },
         "restaurantId": { "type": "string", "description": "Associated restaurant ID for business accounts" },
         "driverId": { "type": "string", "description": "Associated driver ID for delivery accounts" },
         "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
       },
-      "required": ["uid", "name", "email", "role"]
+      "required": ["userId", "email", "role"]
     },
     "Restaurant": {
       "title": "Restaurant",

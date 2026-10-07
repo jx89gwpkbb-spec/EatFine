@@ -89,6 +89,12 @@ fun EatFineApp(viewModel: EatFineViewModel) {
     val activeCoupon by viewModel.activeCoupon.collectAsStateWithLifecycle()
     val rewardPoints by viewModel.rewardPoints.collectAsStateWithLifecycle()
 
+    val userProfileSettings by viewModel.userProfileSettings.collectAsStateWithLifecycle()
+    val adminPlatformSettings by viewModel.adminPlatformSettings.collectAsStateWithLifecycle()
+    val businessOwnerSettings by viewModel.businessOwnerSettings.collectAsStateWithLifecycle()
+    val deliveryAgentSettings by viewModel.deliveryAgentSettings.collectAsStateWithLifecycle()
+    val allPlatformUsers by viewModel.allPlatformUsers.collectAsStateWithLifecycle()
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var isCartOpen by remember { mutableStateOf(false) }
@@ -339,6 +345,8 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                                         accountRole = authUser?.role ?: AppMode.CUSTOMER,
                                         restaurantId = authUser?.restaurantId,
                                         driverId = authUser?.driverId,
+                                        userSettings = userProfileSettings,
+                                        onSaveUserSettings = { viewModel.updateUserProfileSettings(it) },
                                         onSignOut = { viewModel.signOut() },
                                         onSelectMode = { viewModel.setAppMode(it) }
                                     )
@@ -380,6 +388,8 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                             restaurant = partnerRest,
                             orders = restaurantOrders,
                             menuItems = menuItems,
+                            businessSettings = businessOwnerSettings,
+                            onUpdateBusinessSettings = { viewModel.updateBusinessOwnerSettings(it) },
                             onAdvanceOrderStatus = { viewModel.advanceOrderStatus(it) },
                             onToggleItemAvailability = { id, avail -> viewModel.toggleMenuItemAvailability(id, avail) },
                             onToggleOpen = { viewModel.toggleRestaurantOpen(partnerRest.id, it) },
@@ -400,6 +410,8 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                     }
                     DeliveryPartnerScreen(
                         orders = driverOrders,
+                        deliverySettings = deliveryAgentSettings,
+                        onUpdateDeliverySettings = { viewModel.updateDeliveryAgentSettings(it) },
                         onAdvanceOrderStatus = { viewModel.advanceOrderStatus(it) },
                         onSwitchMode = { viewModel.setAppMode(it) }
                     )
@@ -410,6 +422,15 @@ fun EatFineApp(viewModel: EatFineViewModel) {
                     AdminDashboardScreen(
                         orders = allOrders,
                         restaurants = allRestaurants,
+                        platformSettings = adminPlatformSettings,
+                        onUpdatePlatformSettings = { viewModel.updateAdminPlatformSettings(it) },
+                        users = allPlatformUsers,
+                        onCreateUser = { name, email, pass, role, restId, driverId, onDone ->
+                            viewModel.adminCreateUser(name, email, pass, role, restId, driverId, onDone)
+                        },
+                        onUpdateUserRole = { uid, role, restId, driverId ->
+                            viewModel.adminUpdateUserRole(uid, role, restId, driverId)
+                        },
                         onSwitchMode = { viewModel.setAppMode(it) }
                     )
                 }

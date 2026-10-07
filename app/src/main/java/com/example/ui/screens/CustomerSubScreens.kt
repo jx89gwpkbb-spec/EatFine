@@ -60,6 +60,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -84,6 +85,7 @@ import com.example.data.model.OrderEntity
 import com.example.data.model.OrderStatus
 import com.example.data.model.ReservationEntity
 import com.example.data.model.RestaurantEntity
+import com.example.data.model.UserProfileSettings
 import com.example.ui.components.DietaryBadge
 import com.example.ui.components.DietaryFilterPillsRow
 import com.example.ui.components.RealTimeOrderTrackingCard
@@ -1158,10 +1160,22 @@ fun ProfileScreen(
     accountRole: AppMode = AppMode.CUSTOMER,
     restaurantId: String? = null,
     driverId: String? = null,
+    userSettings: UserProfileSettings = UserProfileSettings(),
+    onSaveUserSettings: ((UserProfileSettings) -> Unit)? = null,
     onSignOut: (() -> Unit)? = null,
     onSelectMode: ((AppMode) -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    var isEditingSettings by remember { mutableStateOf(false) }
+    var nameState by remember(userSettings) { mutableStateOf(accountName.ifBlank { userSettings.displayName }) }
+    var phoneState by remember(userSettings) { mutableStateOf(userSettings.phone) }
+    var addressState by remember(userSettings) { mutableStateOf(if (address.isNotBlank()) address else userSettings.defaultAddress) }
+    var selectedRestrictionsState by remember(userSettings) { mutableStateOf(userSettings.selectedDietaryRestrictions) }
+    var pushNotifState by remember(userSettings) { mutableStateOf(userSettings.pushNotificationsEnabled) }
+    var smsState by remember(userSettings) { mutableStateOf(userSettings.smsUpdatesEnabled) }
+    var contactlessState by remember(userSettings) { mutableStateOf(userSettings.contactlessDelivery) }
+    var saveSuccessMsg by remember { mutableStateOf<String?>(null) }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -1342,44 +1356,152 @@ fun ProfileScreen(
             }
         }
 
-        // Dietary Preferences Quick Card
+        // User Settings & Dietary Preferences Card
         item {
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Security,
-                            contentDescription = "Preferences",
-                            tint = FreshGreen,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Text(
-                            text = "Dietary Profile & Allergens",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Security,
+                                contentDescription = "Preferences",
+                                tint = FreshGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Dietary Profile & User Settings",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        TextButton(onClick = { isEditingSettings = !isEditingSettings }) {
+                            Text(if (isEditingSettings) "Collapse" else "Edit Settings", color = BrandOrange, fontSize = 12.sp)
+                        }
                     }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "EatFine automatically flags meals that violate your dietary restrictions across all restaurants and menus.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        DietaryBadge(restriction = DietaryRestriction.GLUTEN_FREE)
-                        DietaryBadge(restriction = DietaryRestriction.VEGAN)
-                        DietaryBadge(restriction = DietaryRestriction.HALAL)
+
+                    if (!isEditingSettings) {
+                        Text(
+                            text = "EatFine automatically flags meals that violate your dietary restrictions across all restaurants and menus.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            if (selectedRestrictionsState.isEmpty()) {
+                                Text("No restrictions selected (All meals visible)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            } else {
+                                selectedRestrictionsState.take(4).forEach { res ->
+                                    DietaryBadge(restriction = res)
+                                }
+                            }
+                        }
+                    } else {
+                        // Editable form
+                        OutlinedTextField(
+                            value = nameState,
+                            onValueChange = { nameState = it },
+                            label = { Text("Display Name") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = phoneState,
+                            onValueChange = { phoneState = it },
+                            label = { Text("Contact Phone") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        OutlinedTextField(
+                            value = addressState,
+                            onValueChange = { addressState = it },
+                            label = { Text("Default Delivery Address") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Text("Select Your Dietary Safety Rules:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            DietaryRestriction.entries.chunked(3).forEach { rowList ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                                    rowList.forEach { restriction ->
+                                        val isSelected = restriction in selectedRestrictionsState
+                                        FilterChip(
+                                            selected = isSelected,
+                                            onClick = {
+                                                selectedRestrictionsState = if (isSelected) {
+                                                    selectedRestrictionsState - restriction
+                                                } else {
+                                                    selectedRestrictionsState + restriction
+                                                }
+                                            },
+                                            label = { Text(restriction.label, fontSize = 11.sp) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Push Order Status Notifications", fontSize = 13.sp)
+                            Switch(checked = pushNotifState, onCheckedChange = { pushNotifState = it })
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Contactless Doorstep Delivery", fontSize = 13.sp)
+                            Switch(checked = contactlessState, onCheckedChange = { contactlessState = it })
+                        }
+
+                        saveSuccessMsg?.let { msg ->
+                            Text(msg, color = FreshGreen, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = {
+                                val updated = userSettings.copy(
+                                    displayName = nameState,
+                                    phone = phoneState,
+                                    defaultAddress = addressState,
+                                    selectedDietaryRestrictions = selectedRestrictionsState,
+                                    pushNotificationsEnabled = pushNotifState,
+                                    smsUpdatesEnabled = smsState,
+                                    contactlessDelivery = contactlessState
+                                )
+                                onSaveUserSettings?.invoke(updated)
+                                saveSuccessMsg = "✓ Settings saved! Dietary preferences updated."
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandOrange),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp)
+                                .testTag("save_user_settings_button")
+                        ) {
+                            Text("Save User Settings", fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
